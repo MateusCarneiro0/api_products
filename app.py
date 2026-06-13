@@ -38,10 +38,10 @@ def fetchProducts():
 def createNewUser():
     dados = request.get_json()
     if not dados or "user" not in dados or "password" not in dados or "id" not in dados:
-        return jsonify({"error": "O valor não preenche todos os dados"}),401
+        return jsonify({"error": "O valor não preenche todos os dados"}), 401
     hasRepeated = Usuario.query.filter(Usuario.user == dados["user"])
     if not hasRepeated is None:
-        return jsonify({"error":"repeat usernames"}),400
+        return jsonify({"error": "repeat usernames"}), 400
     new_user = Usuario(
         user=dados["user"],
         password=dados["password"],
@@ -56,28 +56,39 @@ def createNewUser():
     except Exception as e:
         db.session.rollback()
 
-        return jsonify({"error": str(e)}),400
+        return jsonify({"error": str(e)}), 400
 
 
 @app.route("/users/login", methods=["POST"])
-def fetchCart():
+def loginUser():
     username = request.get_json()["username"]
     password = request.get_json()["password"]
     selectedUser = Usuario.query.filter(
-        username == Usuario.user,password == Usuario.password
+        username == Usuario.user, password == Usuario.password
     ).first()
     if selectedUser is None:
         return jsonify({"auth": False, "message": "Usuário não encontrado"}), 404
     try:
-        
-            loginUser = {
-                "id": selectedUser.id,
-                "user": selectedUser.user,
-                "cart": selectedUser.cart,
-            }
-            return jsonify({"auth":True,"id":selectedUser.id})
+        loginUser = {
+            "id": selectedUser.id,
+            "user": selectedUser.user,
+            "cart": selectedUser.cart,
+        }
+        return jsonify({"auth": True, "id": selectedUser.id})
     except Exception as e:
         return jsonify({"error": str(e)})
+
+
+@app.route("/users/<string:id>/cart", methods=["GET"])
+def fetchCart(id):
+    selectedUser = Usuario.query.filter(Usuario.id == id).first()
+    if selectedUser is None:
+        return jsonify({"error": "Not found id"}), 404
+    try:
+        cart = selectedUser.cart
+        return jsonify(cart)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 
 if __name__ == "__main__":
