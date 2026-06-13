@@ -68,7 +68,7 @@ def createNewUser():
         return jsonify({"error": str(e)}), 400
 
 
-@app.route("/users/<string:id>", methods=["GET"])
+@app.route("/users/fetch/<string:id>", methods=["GET"])
 def fetchUser(id):
     try:
         selectedUser = User.query.get_or_404(id)
