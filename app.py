@@ -19,8 +19,11 @@ class User(db.Model):
 
 @app.route("/products/<string:id>")
 def fetchProductsId(id):
-
-    return jsonify(list(filter(lambda x: x["id"] == id, products)))
+    selected_product = list(filter(lambda x: x["id"] == id, products))
+    if selected_product:
+        return jsonify(selected_product),200
+    else:
+        return jsonify({"error":"product not found"}),404
 
 @app.route("/")
 @app.route("/products")
@@ -35,7 +38,7 @@ def createNewUser():
         return jsonify({"error": "O valor não preenche todos os dados"}), 401
     hasRepeated = User.query.filter(User.user == dados["user"]).first()
     if not hasRepeated is None:
-        return jsonify({"error": "repeat usernames"}), 400
+        return jsonify({"error": "repeat usernames"}), 200
     new_password = generate_password_hash(dados["password"])
     new_user = User(
         user=dados["user"],
@@ -76,7 +79,7 @@ def fetchCart(id):
         return jsonify({"error": "Not found id"}), 404
     try:
         cart = selectedUser.cart
-        return jsonify(cart)
+        return jsonify(cart),200
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 @app.route("/users/<string:id>/addproductcart",methods=["POST"])
@@ -97,7 +100,7 @@ def addInCart(id):
         selectedUser.cart = cart
         
         db.session.commit()
-        return jsonify(selectedUser.cart)
+        return jsonify(selectedUser.cart),200
     except Exception as e:
         db.session.rollback() # Boa prática: desfaz a tentativa se der erro
         return jsonify({"error": str(e)}), 500
@@ -110,7 +113,7 @@ def removeInCart(id):
         cart = list(filter(lambda product: product.id != product_id,cart)) if selectedUser.cart is not None else return jsonify({"warn":"not have products to delete"}),200        
         selectedUser.cart = cart
         db.session.commit()
-        return jsonify(cart),20p
+        return jsonify(cart),200
     except Exception as e:
         return {"error":str(e)},500
 
