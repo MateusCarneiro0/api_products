@@ -88,14 +88,24 @@ def fetchCart(id):
 def addInCart(id):
     try:
         product = request.get_json()
-        selectedUser = User.query.get_or_404(ident=id)
-        cart = selectedUser.cart
+        
+        # 1. Certifique-se de usar o nome correto da classe (Usuario) e passe o id direto
+        selectedUser = User.query.get_or_404(id)
+        
+        # 2. Pega o carrinho atual ou cria uma lista vazia novinha
+        cart = list(selectedUser.cart) if selectedUser.cart is not None else [] 
+        
+        # 3. CORREÇÃO: Apenas faça o append. Não jogue o resultado em outra variável!
         cart.append(product)
+        
+        # 4. Devolve a lista 'cart' modificada para o atributo do usuário
         selectedUser.cart = cart
+        
         db.session.commit()
-        return jsonify(cart)
+        return jsonify(selectedUser.cart)
     except Exception as e:
-        return {"error":str(e)}
+        db.session.rollback() # Boa prática: desfaz a tentativa se der erro
+        return jsonify({"error": str(e)}), 500
 @app.route("/users/<string:id>/removeProductCart",methods=["POST"])
 def removeInCart(id):
     try:
