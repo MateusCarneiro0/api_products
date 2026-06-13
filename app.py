@@ -11,7 +11,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
 
-class Usuario(db.Model):
+class User(db.Model):
     id = db.Column(db.String(30), primary_key=True)
     user = db.Column(db.String(100), nullable=True)
     password = db.Column(db.String(500), nullable=True)
@@ -39,10 +39,10 @@ def createNewUser():
     dados = request.get_json()
     if not dados or "user" not in dados or "password" not in dados or "id" not in dados:
         return jsonify({"error": "O valor não preenche todos os dados"}), 401
-    hasRepeated = Usuario.query.filter(Usuario.user == dados["user"])
+    hasRepeated = User.query.filter(User.user == dados["user"]).first()
     if not hasRepeated is None:
         return jsonify({"error": "repeat usernames"}), 400
-    new_user = Usuario(
+    new_user = User(
         user=dados["user"],
         password=dados["password"],
         id=dados["id"],
@@ -63,17 +63,12 @@ def createNewUser():
 def loginUser():
     username = request.get_json()["username"]
     password = request.get_json()["password"]
-    selectedUser = Usuario.query.filter(
-        username == Usuario.user, password == Usuario.password
+    selectedUser = User.query.filter(
+        username == User.user, password == User.password
     ).first()
     if selectedUser is None:
         return jsonify({"auth": False, "message": "Usuário não encontrado"}), 404
     try:
-        loginUser = {
-            "id": selectedUser.id,
-            "user": selectedUser.user,
-            "cart": selectedUser.cart,
-        }
         return jsonify({"auth": True, "id": selectedUser.id})
     except Exception as e:
         return jsonify({"error": str(e)})
@@ -81,7 +76,7 @@ def loginUser():
 
 @app.route("/users/<string:id>/cart", methods=["GET"])
 def fetchCart(id):
-    selectedUser = Usuario.query.filter(Usuario.id == id).first()
+    selectedUser = User.query.get_or_404(id)
     if selectedUser is None:
         return jsonify({"error": "Not found id"}), 404
     try:
@@ -89,8 +84,30 @@ def fetchCart(id):
         return jsonify(cart)
     except Exception as e:
         return jsonify({"error": str(e)}), 400
-
-
+@app.route("/users/<string:id>/addproductcart",methods=["POST"])
+def addInCart(id):
+    try:
+        product = request.get_json()
+        selectedUser = User.query.get_or_404(ident=id)
+        cart = selectedUser.cart
+        cart.append(product)
+        selectedUser.cart = cart
+        db.session.commit()
+        return jsonify(cart)
+    except Exception as e:
+        return {"error":str(e)}
+@app.route("/users/<string:id>/removeProductCart",methods=["POST"])
+def removeInCart(id):
+    try:
+        product_id = request.get_json()["id"]
+        selectedUser = User.query.get_or_404(ident=id)
+        cart = selectedUser.cart
+        cart = list(filter(lambda product: product.id != product_id,cart))
+        selectedUser.cart = cart
+        db.session.commit()
+        return jsonify(cart)
+    except Exception as e:
+        return {"error":str(e)}
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
