@@ -1,5 +1,5 @@
 instance/
-*.db
+.db
 
 # Virtual Environment
 venv/
