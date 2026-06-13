@@ -16,7 +16,7 @@ db = SQLAlchemy(app)
 
 
 class User(db.Model):
-    id = db.Column(db.String(30), primary_key=True)
+    id = db.Column(db.String(150), primary_key=True)
     user = db.Column(db.String(100), nullable=True)
     password = db.Column(db.String(500), nullable=True)
     cart = db.Column(db.JSON)
@@ -97,7 +97,8 @@ def fetchCart(id):
 def addInCart(id):
     try:
         product = request.get_json()
-
+        if(not product or "id" not in product):
+            return jsonify({"error":"has not the parameter 'id'"})
         # 1. Certifique-se de usar o nome correto da classe (Usuario) e passe o id direto
         selectedUser = User.query.get_or_404(id)
 
