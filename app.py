@@ -6,7 +6,7 @@ import uuid
 import os
 
 app = Flask(__name__)
-uri = os.getenv("DATABASE_URL","sqlite:///users.db")
+uri = os.getenv("DATABASE_URL", "sqlite:///users.db")
 if uri.startswith("postgres://"):
     uri = uri.replace("postgres://", "postgresql://", 1)
 app.config["SQLALCHEMY_DATABASE_URI"] = uri
@@ -20,6 +20,8 @@ class User(db.Model):
     user = db.Column(db.String(200), nullable=True)
     password = db.Column(db.String(500), nullable=True)
     cart = db.Column(db.JSON)
+
+
 with app.app_context():
     db.create_all()
 
@@ -59,10 +61,27 @@ def createNewUser():
     try:
         db.session.add(new_user)
         db.session.commit()
-        return jsonify({"user": dados["user"], "id": userId})
+        return jsonify({"user": dados["user"], "id": userId, "cart": []})
     except Exception as e:
         db.session.rollback()
 
+        return jsonify({"error": str(e)}), 400
+
+
+@app.route("/users/<string:id>", methods=["GET"])
+def fetchUser(id):
+    try:
+        selectedUser = User.query.get_or_404(id)
+        if selectedUser is None:
+            return jsonify({"error": "Not user found"}), 404
+        return jsonify(
+            {
+                "user": selectedUser.user,
+                "id": selectedUser.id,
+                "cart": selectedUser.cart,
+            }
+        )
+    except Exception as e:
         return jsonify({"error": str(e)}), 400
 
 
@@ -76,7 +95,14 @@ def loginUser():
             selectedUser.password, password
         ):
             return jsonify({"auth": False, "message": "Usuário não encontrado"}), 200
-        return jsonify({"auth": True, "id": selectedUser.id}), 200
+        return jsonify(
+            {
+                "auth": True,
+                "id": selectedUser.id,
+                "user": selectedUser.user,
+                "cart": selectedUser.cart,
+            }
+        ), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
@@ -86,7 +112,7 @@ def fetchCart(id):
     selectedUser = User.query.get_or_404(id)
     try:
         cart = selectedUser.cart
-        return jsonify({"cart":cart}), 200
+        return jsonify({"cart": cart}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
@@ -95,8 +121,8 @@ def fetchCart(id):
 def addInCart(id):
     try:
         product = request.get_json()
-        if(not product or "id" not in product):
-            return jsonify({"error":"has not the parameter 'id'"})
+        if not product or "id" not in product:
+            return jsonify({"error": "has not the parameter 'id'"})
         # 1. Certifique-se de usar o nome correto da classe (Usuario) e passe o id direto
         selectedUser = User.query.get_or_404(id)
 
@@ -110,24 +136,27 @@ def addInCart(id):
         selectedUser.cart = cart
 
         db.session.commit()
-        return jsonify({"cart":selectedUser.cart}), 200
+        return jsonify({"cart": selectedUser.cart}), 200
     except Exception as e:
         db.session.rollback()  # Boa prática: desfaz a tentativa se der erro
         return jsonify({"error": str(e)}), 500
 
 
-@app.route("/users/<string:id>/removeProductCart/<string:product_id>", methods=["POST","GET"])
-def removeInCart(id,product_id):
+@app.route(
+    "/users/<string:id>/removeProductCart/<string:product_id>", methods=["POST", "GET"]
+)
+def removeInCart(id, product_id):
     try:
         selectedUser = User.query.get_or_404(ident=id)
         cart = list(selectedUser.cart) if selectedUser.cart is not None else []
         cart = (
             list(filter(lambda product: product["id"] != product_id, cart))
             if selectedUser.cart is not None
-            else [])
+            else []
+        )
         selectedUser.cart = cart
         db.session.commit()
-        return jsonify({"cart":selectedUser.cart})
+        return jsonify({"cart": selectedUser.cart})
     except Exception as e:
         return {"error": str(e)}, 500
 
@@ -145,4 +174,4 @@ def clearCart(id):
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host="0.0.0.0", port=port)
