@@ -21,7 +21,6 @@ class User(db.Model):
     password = db.Column(db.String(500), nullable=True)
     cart = db.Column(db.JSON)
 with app.app_context():
-    db.drop_all()
     db.create_all()
 
 
