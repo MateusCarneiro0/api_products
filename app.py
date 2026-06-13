@@ -115,9 +115,21 @@ def removeInCart(id):
         cart = list(filter(lambda product: product.id != product_id,cart)) if selectedUser.cart is not None else return jsonify({"error":"not have products"})        
         selectedUser.cart = cart
         db.session.commit()
-        return jsonify(cart)
+        return jsonify(cart),20p
     except Exception as e:
-        return {"error":str(e)}
+        return {"error":str(e)},500
+
+@app.route("/users/<string:id>/clearcart",methods=["POST"])
+def clearCart(id):
+    try:
+        selectedUser = User.query.get_or_404(id)
+        selectedUser.cart = []
+        db.session.commit()
+        return jsonify({"cart":selectedUser.cart}),200
+    except Exception as e:
+        return jsonify({"error":str(e)}),500
+        
+
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
