@@ -20,6 +20,8 @@ class User(db.Model):
     user = db.Column(db.String(100), nullable=True)
     password = db.Column(db.String(500), nullable=True)
     cart = db.Column(db.JSON)
+with app.app_context():
+    db.create_all()
 
 
 @app.route("/products/<string:id>")
@@ -143,7 +145,5 @@ def clearCart(id):
 
 
 if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
