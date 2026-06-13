@@ -84,11 +84,9 @@ def loginUser():
 @app.route("/users/<string:id>/cart", methods=["GET"])
 def fetchCart(id):
     selectedUser = User.query.get_or_404(id)
-    if selectedUser is None:
-        return jsonify({"error": "Not found id"}), 404
     try:
         cart = selectedUser.cart
-        return jsonify(cart), 200
+        return jsonify({"cart":cart}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
@@ -118,7 +116,7 @@ def addInCart(id):
         return jsonify({"error": str(e)}), 500
 
 
-@app.route("/users/<string:id>/removeProductCart/<string:product_id>", methods=["POST"])
+@app.route("/users/<string:id>/removeProductCart/<string:product_id>", methods=["POST","GET"])
 def removeInCart(id,product_id):
     try:
         selectedUser = User.query.get_or_404(ident=id)
