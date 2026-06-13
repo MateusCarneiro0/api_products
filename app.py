@@ -110,10 +110,7 @@ def removeInCart(id):
         product_id = request.get_json()["id"]
         selectedUser = User.query.get_or_404(ident=id)
         cart = list(selectedUser.cart) if selectedUser.cart is not None else []
-        cart = list(filter(lambda product: product.id != product_id,cart)) if selectedUser.cart is not None else return jsonify({"warn":"not have products to delete"}),200        
-        selectedUser.cart = cart
-        db.session.commit()
-        return jsonify(cart),200
+        cart = list(filter(lambda product: product.id != product_id,cart)) if selectedUser.cart is not None else []
     except Exception as e:
         return {"error":str(e)},500
 
