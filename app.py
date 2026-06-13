@@ -17,13 +17,15 @@ class User(db.Model):
     password = db.Column(db.String(500), nullable=True)
     cart = db.Column(db.JSON)
 
+
 @app.route("/products/<string:id>")
 def fetchProductsId(id):
     selected_product = list(filter(lambda x: x["id"] == id, products))
     if selected_product:
-        return jsonify(selected_product),200
+        return jsonify(selected_product), 200
     else:
-        return jsonify({"error":"product not found"}),404
+        return jsonify({"error": "product not found"}), 404
+
 
 @app.route("/")
 @app.route("/products")
@@ -62,14 +64,14 @@ def loginUser():
     username = request.get_json()["username"]
     password = request.get_json()["password"]
     selectedUser = User.query.filter(
-        username == User.user, check_password_hash(User.password,password)
+        username == User.user, check_password_hash(User.password, password)
     ).first()
     if selectedUser is None:
         return jsonify({"auth": False, "message": "Usuário não encontrado"}), 200
     try:
         return jsonify({"auth": True, "id": selectedUser.id}), 200
     except Exception as e:
-        return jsonify({"error": str(e)}),400
+        return jsonify({"error": str(e)}), 400
 
 
 @app.route("/users/<string:id>/cart", methods=["GET"])
@@ -79,51 +81,60 @@ def fetchCart(id):
         return jsonify({"error": "Not found id"}), 404
     try:
         cart = selectedUser.cart
-        return jsonify(cart),200
+        return jsonify(cart), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 400
-@app.route("/users/<string:id>/addproductcart",methods=["POST"])
+
+
+@app.route("/users/<string:id>/addproductcart", methods=["POST"])
 def addInCart(id):
     try:
         product = request.get_json()
-        
+
         # 1. Certifique-se de usar o nome correto da classe (Usuario) e passe o id direto
         selectedUser = User.query.get_or_404(id)
-        
+
         # 2. Pega o carrinho atual ou cria uma lista vazia novinha
-        cart = list(selectedUser.cart) if selectedUser.cart is not None else [] 
-        
+        cart = list(selectedUser.cart) if selectedUser.cart is not None else []
+
         # 3. CORREÇÃO: Apenas faça o append. Não jogue o resultado em outra variável!
         cart.append(product)
-        
+
         # 4. Devolve a lista 'cart' modificada para o atributo do usuário
         selectedUser.cart = cart
-        
+
         db.session.commit()
-        return jsonify(selectedUser.cart),200
+        return jsonify(selectedUser.cart), 200
     except Exception as e:
-        db.session.rollback() # Boa prática: desfaz a tentativa se der erro
+        db.session.rollback()  # Boa prática: desfaz a tentativa se der erro
         return jsonify({"error": str(e)}), 500
-@app.route("/users/<string:id>/removeProductCart",methods=["POST"])
+
+
+@app.route("/users/<string:id>/removeProductCart", methods=["POST"])
 def removeInCart(id):
     try:
         product_id = request.get_json()["id"]
         selectedUser = User.query.get_or_404(ident=id)
         cart = list(selectedUser.cart) if selectedUser.cart is not None else []
-        cart = list(filter(lambda product: product.id != product_id,cart)) if selectedUser.cart is not None else []
+        cart = (
+            list(filter(lambda product: product.id != product_id, cart))
+            if selectedUser.cart is not None
+            else []
+        )
     except Exception as e:
-        return {"error":str(e)},500
+        return {"error": str(e)}, 500
 
-@app.route("/users/<string:id>/clearcart",methods=["POST"])
+
+@app.route("/users/<string:id>/clearcart", methods=["POST"])
 def clearCart(id):
     try:
         selectedUser = User.query.get_or_404(id)
         selectedUser.cart = []
         db.session.commit()
-        return jsonify({"cart":selectedUser.cart}),200
+        return jsonify({"cart": selectedUser.cart}), 200
     except Exception as e:
-        return jsonify({"error":str(e)}),500
-        
+        return jsonify({"error": str(e)}), 500
+
 
 if __name__ == "__main__":
     with app.app_context():
