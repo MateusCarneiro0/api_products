@@ -16,11 +16,12 @@ db = SQLAlchemy(app)
 
 
 class User(db.Model):
-    id = db.Column(db.String(150), primary_key=True)
-    user = db.Column(db.String(100), nullable=True)
+    id = db.Column(db.String(300), primary_key=True)
+    user = db.Column(db.String(200), nullable=True)
     password = db.Column(db.String(500), nullable=True)
     cart = db.Column(db.JSON)
 with app.app_context():
+    db.drop_all()
     db.create_all()
 
 
