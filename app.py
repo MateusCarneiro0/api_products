@@ -17,18 +17,12 @@ class User(db.Model):
     password = db.Column(db.String(500), nullable=True)
     cart = db.Column(db.JSON)
 
-
-@app.route("/")
-def index():
-    return "Hello, World!"
-
-
 @app.route("/products/<string:id>")
 def fetchProductsId(id):
 
     return jsonify(list(filter(lambda x: x["id"] == id, products)))
 
-
+@app.route("/")
 @app.route("/products")
 def fetchProducts():
     return jsonify(products)
@@ -42,9 +36,10 @@ def createNewUser():
     hasRepeated = User.query.filter(User.user == dados["user"]).first()
     if not hasRepeated is None:
         return jsonify({"error": "repeat usernames"}), 400
+    new_password = generate_password_hash(dados["password"])
     new_user = User(
         user=dados["user"],
-        password=dados["password"],
+        password=new_password,
         id=dados["id"],
         cart=[],
     )
@@ -64,14 +59,14 @@ def loginUser():
     username = request.get_json()["username"]
     password = request.get_json()["password"]
     selectedUser = User.query.filter(
-        username == User.user, password == User.password
+        username == User.user, check_password_hash(User.password,password)
     ).first()
     if selectedUser is None:
-        return jsonify({"auth": False, "message": "Usuário não encontrado"}), 404
+        return jsonify({"auth": False, "message": "Usuário não encontrado"}), 200
     try:
-        return jsonify({"auth": True, "id": selectedUser.id})
+        return jsonify({"auth": True, "id": selectedUser.id}), 200
     except Exception as e:
-        return jsonify({"error": str(e)})
+        return jsonify({"error": str(e)}),400
 
 
 @app.route("/users/<string:id>/cart", methods=["GET"])
