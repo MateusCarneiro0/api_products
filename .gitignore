@@ -1,5 +1,6 @@
-instance/
-.db
+# Força o Git a monitorar a pasta instance e arquivos .db dentro dela
+.instance/
+.instance/*.db
 
 # Virtual Environment
 venv/
