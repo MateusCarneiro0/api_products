@@ -134,13 +134,13 @@ def addInCart(id):
         cart = list(selectedUser.cart) if selectedUser.cart is not None else []
 
         hasRepeated = list(filter(lambda x: x["id"] == product["id"],cart))
-        if hasRepeated:
+        if hasRepeated[0]:
             cart.remove(hasRepeated)
         # 3. CORREÇÃO: Apenas faça o append. Não jogue o resultado em outra variável!
         cart.append(product)
 
         # 4. Devolve a lista 'cart' modificada para o atributo do usuário
-        selectedUser.cart = set(cart)
+        selectedUser.cart = cart
 
         db.session.commit()
         return jsonify({"cart": selectedUser.cart}), 200
