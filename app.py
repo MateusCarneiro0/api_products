@@ -8,7 +8,7 @@ from flask_cors import CORS
 
 app = Flask(__name__)
 
-CORS(app)
+CORS(app,origins=["https://emporio-natural.vercel.app"])
 
 uri = os.getenv("DATABASE_URL", "sqlite:///users.db")
 if uri.startswith("postgres://"):
