@@ -4,8 +4,12 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from products import products
 import uuid
 import os
+from flask_cors import CORS
 
 app = Flask(__name__)
+
+CORS(app)
+
 uri = os.getenv("DATABASE_URL", "sqlite:///users.db")
 if uri.startswith("postgres://"):
     uri = uri.replace("postgres://", "postgresql://", 1)
