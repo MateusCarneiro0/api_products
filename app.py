@@ -148,10 +148,11 @@ def addInCart(id):
 
 
 @app.route(
-    "/users/<string:id>/removeProductCart/<string:product_id>", methods=["POST", "GET"]
+    "/users/<string:id>/removeProductCart/", methods=["POST"]
 )
-def removeInCart(id, product_id):
+def removeInCart(id):
     try:
+        product_id = request.get_json()
         selectedUser = User.query.get_or_404(ident=id)
         cart = list(selectedUser.cart) if selectedUser.cart is not None else []
         cart = (
