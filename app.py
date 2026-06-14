@@ -140,7 +140,7 @@ def addInCart(id):
         cart.append(product)
 
         # 4. Devolve a lista 'cart' modificada para o atributo do usuário
-        selectedUser.cart = cart
+        selectedUser.cart = set(cart)
 
         db.session.commit()
         return jsonify({"cart": selectedUser.cart}), 200
