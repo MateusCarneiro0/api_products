@@ -133,9 +133,7 @@ def addInCart(id):
         # 2. Pega o carrinho atual ou cria uma lista vazia novinha
         cart = list(selectedUser.cart) if selectedUser.cart is not None else []
 
-        hasRepeated = list(filter(lambda x: x["id"] == product["id"],cart))
-        if hasRepeated[0]:
-            cart.remove(hasRepeated)
+        cart = [x for x in cart if x["id"] != product["id"]]
         # 3. CORREÇÃO: Apenas faça o append. Não jogue o resultado em outra variável!
         cart.append(product)
 
