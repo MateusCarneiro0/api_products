@@ -148,7 +148,7 @@ def addInCart(id):
 
 
 @app.route(
-    "/users/<string:id>/removeProductCart/", methods=["POST"]
+    "/users/<string:id>/removeProductCart", methods=["POST","DELETE"]
 )
 def removeInCart(id):
     try:
