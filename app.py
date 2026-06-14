@@ -124,7 +124,7 @@ def fetchCart(id):
 @app.route("/users/<string:id>/addproductcart", methods=["POST"])
 def addInCart(id):
     try:
-        product = request.get_json()
+        product = request.get_json()["product"]
         if not product or "id" not in product:
             return jsonify({"error": "has not the parameter 'id'"})
         # 1. Certifique-se de usar o nome correto da classe (Usuario) e passe o id direto
@@ -152,7 +152,7 @@ def addInCart(id):
 )
 def removeInCart(id):
     try:
-        product_id = request.get_json()
+        product_id = request.get_json()["id"]
         selectedUser = User.query.get_or_404(ident=id)
         cart = list(selectedUser.cart) if selectedUser.cart is not None else []
         cart = (
