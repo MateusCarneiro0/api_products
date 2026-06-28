@@ -8,7 +8,7 @@ from flask_cors import CORS
 
 app = Flask(__name__)
 
-CORS(app,origins=["https://emporio-natural.vercel.app"])
+CORS(app)
 
 uri = os.getenv("DATABASE_URL", "sqlite:///users.db")
 if uri.startswith("postgres://"):
@@ -52,7 +52,7 @@ def createNewUser():
         return jsonify({"error": "O valor não preenche todos os dados"}), 401
     hasRepeated = User.query.filter(User.user == dados["user"]).first()
     if not hasRepeated is None:
-        return jsonify({"error": "repeat usernames"}), 200
+        return jsonify({"error": "repeat usernames","hasRepeated":True}), 200
     userId = uuid.uuid4().hex
     new_password = generate_password_hash(dados["password"])
     new_user = User(
