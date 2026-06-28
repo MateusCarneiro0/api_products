@@ -108,7 +108,7 @@ def loginUser():
             }
         ), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 400
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/users/<string:id>/cart", methods=["GET"])
