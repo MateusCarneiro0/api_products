@@ -50,6 +50,9 @@ def createNewUser():
     dados = request.get_json()
     if not dados or "user" not in dados or "password" not in dados:
         return jsonify({"error": "O valor não preenche todos os dados"}), 401
+    if len(dados["user"]) > 100 or len(dados["password"]) > 100:
+        return jsonify({"error": "many characters","manyCharacters":True}), 200
+
     hasRepeated = User.query.filter(User.user == dados["user"]).first()
     if not hasRepeated is None:
         return jsonify({"error": "repeat usernames","hasRepeated":True}), 200
