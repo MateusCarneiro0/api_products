@@ -1,7 +1,9 @@
-from flask import Flask, jsonify, request, abort
+from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import check_password_hash, generate_password_hash
 from products import products
+from sqlalchemy.orm import mapped_column,Mapped
+from sqlalchemy import String,JSON
 import uuid
 import os
 from flask_cors import CORS
@@ -20,10 +22,10 @@ db = SQLAlchemy(app)
 
 
 class User(db.Model):
-    id = db.Column(db.String(300), primary_key=True)
-    user = db.Column(db.String(100), nullable=True)
-    password = db.Column(db.String(100), nullable=True)
-    cart = db.Column(db.JSON)
+    id:Mapped[str] = mapped_column(String(300), primary_key=True)
+    user:Mapped[str] = mapped_column(String(100), nullable=True, unique=True)
+    password:Mapped[str] = mapped_column(String(100), nullable=True)
+    cart = mapped_column(JSON)
 
 
 with app.app_context():
