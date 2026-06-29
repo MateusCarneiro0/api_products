@@ -1,10 +1,7 @@
-# Força o Git a monitorar a pasta instance e arquivos .db dentro dela
-.instance/
-.instance/*.db
-
-# Virtual Environment
 venv/
-.venv/
-env/
-.env/
-ENV/
+__pycache__/
+*.py[cod]
+.ruff_cache/
+instance/
+instance/users.db
+deleter.py
