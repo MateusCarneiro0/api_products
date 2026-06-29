@@ -2,8 +2,9 @@ from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import check_password_hash, generate_password_hash
 from products import products
-from sqlalchemy.orm import mapped_column,Mapped
-from sqlalchemy import String,JSON
+from sqlalchemy.orm import mapped_column, Mapped
+from sqlalchemy import String, JSON
+from sqlalchemy.exc import IntegrityError, DataError
 import uuid
 import os
 from flask_cors import CORS
@@ -22,9 +23,9 @@ db = SQLAlchemy(app)
 
 
 class User(db.Model):
-    id:Mapped[str] = mapped_column(String(300), primary_key=True)
-    user:Mapped[str] = mapped_column(String(100), nullable=True, unique=True)
-    password:Mapped[str] = mapped_column(String(100), nullable=True)
+    id: Mapped[str] = mapped_column(String(300), primary_key=True)
+    user: Mapped[str] = mapped_column(String(100), nullable=True, unique=True)
+    password: Mapped[str] = mapped_column(String(100), nullable=True)
     cart = mapped_column(JSON)
 
 
@@ -53,24 +54,30 @@ def createNewUser():
     if not dados or "user" not in dados or "password" not in dados:
         return jsonify({"error": "O valor não preenche todos os dados"}), 401
     if len(dados["user"]) > 100 or len(dados["password"]) > 100:
-        return jsonify({"error": "many characters","manyCharacters":True}), 200
+        return jsonify({"error": "many characters", "manyCharacters": True}), 200
 
     hasRepeated = User.query.filter(User.user == dados["user"]).first()
     if not hasRepeated is None:
-        return jsonify({"error": "repeat usernames","hasRepeated":True}), 200
+        return jsonify({"error": "repeat usernames", "hasRepeated": True}), 200
     userId = uuid.uuid4().hex
     new_password = generate_password_hash(dados["password"])
     new_user = User(
-        user=dados["user"],#type:ignore
-        password=new_password,#type:ignore
-        id=userId,#type:ignore
-        cart=[],#type:ignore
+        user=dados["user"],  # type:ignore
+        password=new_password,  # type:ignore
+        id=userId,  # type:ignore
+        cart=[],  # type:ignore
     )
 
     try:
         db.session.add(new_user)
         db.session.commit()
         return jsonify({"user": dados["user"], "id": userId, "cart": []})
+    except IntegrityError as e:
+        db.session.rollback()
+        return jsonify({"error": "many characters", "manyCharacters": True}), 200
+    except DataError as e:
+        db.session.rollback()
+        return jsonify({"error": "many characters", "manyCharacters": True}), 200
     except Exception as e:
         db.session.rollback()
 
@@ -152,9 +159,7 @@ def addInCart(id):
         return jsonify({"error": str(e)}), 500
 
 
-@app.route(
-    "/users/<string:id>/removeProductCart", methods=["POST","DELETE"]
-)
+@app.route("/users/<string:id>/removeProductCart", methods=["POST", "DELETE"])
 def removeInCart(id):
     try:
         product_id = request.get_json()["id"]
