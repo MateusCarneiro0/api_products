@@ -56,10 +56,10 @@ def createNewUser():
     userId = uuid.uuid4().hex
     new_password = generate_password_hash(dados["password"])
     new_user = User(
-        user=dados["user"],
-        password=new_password,
-        id=userId,
-        cart=[],
+        user=dados["user"],#type:ignore
+        password=new_password,#type:ignore
+        id=userId,#type:ignore
+        cart=[],#type:ignore
     )
 
     try:
