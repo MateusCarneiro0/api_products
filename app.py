@@ -183,8 +183,9 @@ def clearCart(id):
         selectedUser = User.query.get_or_404(id)
         selectedUser.cart = []
         db.session.commit()
-        return jsonify({"cart": selectedUser.cart}), 200
+        return jsonify({"cart": selectedUser.cart,"status":"clean"}), 200
     except Exception as e:
+        db.session.rollback()
         return jsonify({"error": str(e)}), 500
 
 
