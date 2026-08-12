@@ -123,14 +123,49 @@ def loginUser():
         return jsonify({"error": str(e)}), 500
 
 
-@app.route("/users/<string:id>/cart", methods=["GET"])
+@app.route("/users/<string:id>/cart", methods=["GET", "POST", "DELETE"])
 def fetchCart(id):
     selectedUser = User.query.get_or_404(id)
-    try:
-        cart = selectedUser.cart
-        return jsonify({"cart": cart}), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
+    if request.method == "GET":
+        try:
+            cart = selectedUser.cart
+            return jsonify({"cart": cart}), 200
+        except Exception as e:
+            return jsonify({"error": str(e)}), 400
+    elif request.method == "POST":
+        try:
+            product = request.get_json()["product"]
+            if not product or "id" not in product:
+                return jsonify({"error": "has not the parameter 'id'"})
+
+            cart = list(selectedUser.cart) if selectedUser.cart is not None else []
+
+            cart = [x for x in cart if x["id"] != product["id"]]
+
+            cart.append(product)
+
+            selectedUser.cart = cart
+
+            db.session.commit()
+            return jsonify({"cart": selectedUser.cart}), 200
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({"error": str(e)}), 500
+    elif request.method == "DELETE":
+        try:
+            product_id = request.get_json()["id"]
+            selectedUser = User.query.get_or_404(ident=id)
+            cart = list(selectedUser.cart) if selectedUser.cart is not None else []
+            cart = (
+                list(filter(lambda product: product["id"] != product_id, cart))
+                if selectedUser.cart is not None
+                else []
+            )
+            selectedUser.cart = cart
+            db.session.commit()
+            return jsonify({"cart": selectedUser.cart})
+        except Exception as e:
+            return {"error": str(e)}, 500
 
 
 @app.route("/users/<string:id>/addproductcart", methods=["POST"])
@@ -183,7 +218,7 @@ def clearCart(id):
         selectedUser = User.query.get_or_404(id)
         selectedUser.cart = []
         db.session.commit()
-        return jsonify({"cart": selectedUser.cart,"status":"clean"}), 200
+        return jsonify({"cart": selectedUser.cart, "status": "clean"}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
