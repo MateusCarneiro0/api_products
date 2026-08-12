@@ -123,7 +123,7 @@ def loginUser():
         return jsonify({"error": str(e)}), 500
 
 
-@app.route("/users/<string:id>/cart", methods=["GET", "POST", "DELETE"])
+@app.route("/users/<string:id>/cart", methods=["GET", "POST", "DELETE"]) #type: ignore
 def fetchCart(id):
     selectedUser = User.query.get_or_404(id)
     if request.method == "GET":
