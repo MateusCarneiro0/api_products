@@ -5,3 +5,4 @@ __pycache__/
 instance/
 instance/users.db
 deleter.py
+.env

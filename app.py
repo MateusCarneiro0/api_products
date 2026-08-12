@@ -8,12 +8,24 @@ from sqlalchemy.exc import IntegrityError, DataError
 import uuid
 import os
 from flask_cors import CORS
+from flask_jwt_extended import (
+    JWTManager,
+    get_jwt_identity,
+    jwt_required,
+    create_access_token,
+)
+from datetime import timedelta
+
+uri = os.getenv("DATABASE_URL", "sqlite:///users.db")
+secret_key_jwt = os.getenv("JWT_SECRET_KEY_APP", "COLOQUE UMA CHAVE IMEDIATAMENTE")
 
 app = Flask(__name__)
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=14)
+app.config["JWT_SECRET_KEY"] = secret_key_jwt
+jwt = JWTManager(app)
 
 CORS(app)
 
-uri = os.getenv("DATABASE_URL", "sqlite:///users.db")
 if uri.startswith("postgres://"):
     uri = uri.replace("postgres://", "postgresql://", 1)
 app.config["SQLALCHEMY_DATABASE_URI"] = uri
@@ -32,6 +44,17 @@ class User(db.Model):
 with app.app_context():
     db.create_all()
 
+@jwt.unauthorized_loader
+def resposta_token_ausente(error_string):
+    return jsonify({
+        "error": "No JWT Token",
+    }), 401
+
+@jwt.invalid_token_loader
+def resposta_token_invalido(error_string):
+    return jsonify({
+        "error":"Invalid Token"  
+    }), 422
 
 @app.route("/products/<string:id>")
 def fetchProductsId(id):
@@ -61,6 +84,7 @@ def createNewUser():
         return jsonify({"error": "repeat usernames", "hasRepeated": True}), 200
     userId = uuid.uuid4().hex
     new_password = generate_password_hash(dados["password"])
+    acess_token = create_access_token(identity=userId)
     new_user = User(
         user=dados["user"],  # type:ignore
         password=new_password,  # type:ignore
@@ -71,7 +95,7 @@ def createNewUser():
     try:
         db.session.add(new_user)
         db.session.commit()
-        return jsonify({"user": dados["user"], "id": userId, "cart": []})
+        return jsonify({"user": dados["user"], "id": userId, "cart": [], "acess_token":acess_token})
     except IntegrityError as e:
         db.session.rollback()
         return jsonify({"error": "many characters", "manyCharacters": True}), 200
@@ -84,16 +108,17 @@ def createNewUser():
         return jsonify({"error": str(e)}), 400
 
 
-@app.route("/users/fetch/<string:id>", methods=["GET"])
-def fetchUser(id):
+@app.route("/users/me", methods=["GET"])
+@jwt_required()
+def fetchUser():
     try:
+        id = get_jwt_identity()
         selectedUser = User.query.get_or_404(id)
         if selectedUser is None:
             return jsonify({"error": "Not user found"}), 404
         return jsonify(
             {
                 "user": selectedUser.user,
-                "id": selectedUser.id,
                 "cart": selectedUser.cart,
             }
         )
@@ -111,10 +136,11 @@ def loginUser():
             selectedUser.password, password
         ):
             return jsonify({"auth": False, "message": "Usuário não encontrado"}), 200
+        acess_token = create_access_token(selectedUser.id)
         return jsonify(
             {
                 "auth": True,
-                "id": selectedUser.id,
+                "acess_token": acess_token,
                 "user": selectedUser.user,
                 "cart": selectedUser.cart,
             }
@@ -123,8 +149,10 @@ def loginUser():
         return jsonify({"error": str(e)}), 500
 
 
-@app.route("/users/<string:id>/cart", methods=["GET", "POST", "DELETE"]) #type: ignore
-def fetchCart(id):
+@app.route("/users/cart", methods=["GET", "POST", "DELETE"])  # type: ignore
+@jwt_required()
+def fetchCart():
+    id = get_jwt_identity()
     selectedUser = User.query.get_or_404(id)
     if request.method == "GET":
         try:
@@ -154,7 +182,6 @@ def fetchCart(id):
     elif request.method == "DELETE":
         try:
             product_id = request.get_json()["id"]
-            selectedUser = User.query.get_or_404(ident=id)
             cart = list(selectedUser.cart) if selectedUser.cart is not None else []
             cart = (
                 list(filter(lambda product: product["id"] != product_id, cart))
@@ -166,50 +193,6 @@ def fetchCart(id):
             return jsonify({"cart": selectedUser.cart})
         except Exception as e:
             return {"error": str(e)}, 500
-
-
-@app.route("/users/<string:id>/addproductcart", methods=["POST"])
-def addInCart(id):
-    try:
-        product = request.get_json()["product"]
-        if not product or "id" not in product:
-            return jsonify({"error": "has not the parameter 'id'"})
-        # 1. Certifique-se de usar o nome correto da classe (Usuario) e passe o id direto
-        selectedUser = User.query.get_or_404(id)
-
-        # 2. Pega o carrinho atual ou cria uma lista vazia novinha
-        cart = list(selectedUser.cart) if selectedUser.cart is not None else []
-
-        cart = [x for x in cart if x["id"] != product["id"]]
-        # 3. CORREÇÃO: Apenas faça o append. Não jogue o resultado em outra variável!
-        cart.append(product)
-
-        # 4. Devolve a lista 'cart' modificada para o atributo do usuário
-        selectedUser.cart = cart
-
-        db.session.commit()
-        return jsonify({"cart": selectedUser.cart}), 200
-    except Exception as e:
-        db.session.rollback()  # Boa prática: desfaz a tentativa se der erro
-        return jsonify({"error": str(e)}), 500
-
-
-@app.route("/users/<string:id>/removeProductCart", methods=["POST", "DELETE"])
-def removeInCart(id):
-    try:
-        product_id = request.get_json()["id"]
-        selectedUser = User.query.get_or_404(ident=id)
-        cart = list(selectedUser.cart) if selectedUser.cart is not None else []
-        cart = (
-            list(filter(lambda product: product["id"] != product_id, cart))
-            if selectedUser.cart is not None
-            else []
-        )
-        selectedUser.cart = cart
-        db.session.commit()
-        return jsonify({"cart": selectedUser.cart})
-    except Exception as e:
-        return {"error": str(e)}, 500
 
 
 @app.route("/users/<string:id>/clearCart", methods=["POST"])
