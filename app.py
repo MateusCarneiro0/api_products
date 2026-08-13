@@ -95,7 +95,7 @@ def createNewUser():
     try:
         db.session.add(new_user)
         db.session.commit()
-        return jsonify({"user": dados["user"], "id": userId, "cart": [], "acess_token":acess_token})
+        return jsonify({"user": dados["user"], "cart": [], "acess_token":acess_token})
     except IntegrityError as e:
         db.session.rollback()
         return jsonify({"error": "many characters", "manyCharacters": True}), 200
