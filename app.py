@@ -195,9 +195,11 @@ def fetchCart():
             return {"error": str(e)}, 500
 
 
-@app.route("/users/<string:id>/clearCart", methods=["POST"])
-def clearCart(id):
+@app.route("/users/clearCart", methods=["DELETE"])
+@jwt_required()
+def clearCart():
     try:
+        id = get_jwt_identity()
         selectedUser = User.query.get_or_404(id)
         selectedUser.cart = []
         db.session.commit()
