@@ -14,15 +14,15 @@ from flask_jwt_extended import (
     jwt_required,
     create_access_token,
 )
-from datetime import timedelta
+import datetime
+import jwt
 
 uri = os.getenv("DATABASE_URL", "sqlite:///users.db")
 secret_key_jwt = os.getenv("JWT_SECRET_KEY_APP", "COLOQUE UMA CHAVE IMEDIATAMENTE")
 
 app = Flask(__name__)
-app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=14)
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = datetime.timedelta(days=14)
 app.config["JWT_SECRET_KEY"] = secret_key_jwt
-jwt = JWTManager(app)
 
 CORS(app)
 
@@ -32,6 +32,18 @@ app.config["SQLALCHEMY_DATABASE_URI"] = uri
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
+
+algorithm = "HS256"
+
+
+def create_acess_token(data):
+    payload = {
+        "id": data,
+        "exp": datetime.datetime.now(datetime.timezone.utc)
+        + datetime.timedelta(days=7),
+    }
+    token = jwt.encode(key=secret_key_jwt, payload=payload)
+    return token
 
 
 class User(db.Model):
@@ -44,17 +56,20 @@ class User(db.Model):
 with app.app_context():
     db.create_all()
 
+
 @jwt.unauthorized_loader
 def resposta_token_ausente(error_string):
-    return jsonify({
-        "error": "No JWT Token",
-    }), 401
+    return jsonify(
+        {
+            "error": "No JWT Token",
+        }
+    ), 401
+
 
 @jwt.invalid_token_loader
 def resposta_token_invalido(error_string):
-    return jsonify({
-        "error":"Invalid Token"  
-    }), 422
+    return jsonify({"error": "Invalid Token"}), 422
+
 
 @app.route("/products/<string:id>")
 def fetchProductsId(id):
@@ -95,7 +110,7 @@ def createNewUser():
     try:
         db.session.add(new_user)
         db.session.commit()
-        return jsonify({"user": dados["user"], "cart": [], "acess_token":acess_token})
+        return jsonify({"user": dados["user"], "cart": [], "acess_token": acess_token})
     except IntegrityError as e:
         db.session.rollback()
         return jsonify({"error": "many characters", "manyCharacters": True}), 200
