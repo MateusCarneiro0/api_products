@@ -33,7 +33,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
 
-algorithm = "HS256"
+algorithm = os.getenv("ALGORITHM","HS256")
 
 
 def create_token():
