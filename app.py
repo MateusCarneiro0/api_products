@@ -11,11 +11,11 @@ from flask_cors import CORS
 from flask_jwt_extended import (
     JWTManager,
     get_jwt_identity,
-    jwt_required,
     create_access_token,
 )
 import datetime
 import jwt
+import functools
 
 uri = os.getenv("DATABASE_URL", "sqlite:///users.db")
 secret_key_jwt = os.getenv("JWT_SECRET_KEY_APP", "COLOQUE UMA CHAVE IMEDIATAMENTE")
@@ -36,6 +36,17 @@ db = SQLAlchemy(app)
 algorithm = "HS256"
 
 
+def create_token():
+    token = request.headers.get("Authentication")
+    if token is None:
+        return jsonify(
+            {
+                "error": "No JWT Token",
+            }
+        ), 401
+    return token
+
+
 def create_acess_token(data):
     payload = {
         "id": data,
@@ -44,6 +55,30 @@ def create_acess_token(data):
     }
     token = jwt.encode(key=secret_key_jwt, payload=payload)
     return token
+
+
+def required_authentication(func):
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+
+        try:
+            token = create_token()
+
+            data_decoded = jwt.decode(
+                jwt=token,# type:ignore
+                key=secret_key_jwt,
+                algorithms=[algorithm],  
+            )
+            return func(*args, **kwargs, id=data_decoded)
+
+        except jwt.ExpiredSignatureError:
+            return jsonify({"error": "Expired token", "type_error": "invalid"}), 422
+
+        except jwt.DecodeError:
+            return jsonify({"error": "Invalid Token", "type_error": "expired"}), 422
+
+    return wrapper
 
 
 class User(db.Model):
@@ -55,20 +90,6 @@ class User(db.Model):
 
 with app.app_context():
     db.create_all()
-
-
-@jwt.unauthorized_loader
-def resposta_token_ausente(error_string):
-    return jsonify(
-        {
-            "error": "No JWT Token",
-        }
-    ), 401
-
-
-@jwt.invalid_token_loader
-def resposta_token_invalido(error_string):
-    return jsonify({"error": "Invalid Token"}), 422
 
 
 @app.route("/products/<string:id>")
@@ -124,10 +145,9 @@ def createNewUser():
 
 
 @app.route("/users/me", methods=["GET"])
-@jwt_required()
-def fetchUser():
+@required_authentication
+def fetchUser(id):
     try:
-        id = get_jwt_identity()
         selectedUser = User.query.get_or_404(id)
         if selectedUser is None:
             return jsonify({"error": "Not user found"}), 404
@@ -165,9 +185,8 @@ def loginUser():
 
 
 @app.route("/users/cart", methods=["GET", "POST", "DELETE"])  # type: ignore
-@jwt_required()
-def fetchCart():
-    id = get_jwt_identity()
+@required_authentication
+def fetchCart(id):
     selectedUser = User.query.get_or_404(id)
     if request.method == "GET":
         try:
@@ -211,8 +230,8 @@ def fetchCart():
 
 
 @app.route("/users/clearCart", methods=["DELETE"])
-@jwt_required()
-def clearCart():
+@required_authentication
+def clearCart(id):
     try:
         id = get_jwt_identity()
         selectedUser = User.query.get_or_404(id)
