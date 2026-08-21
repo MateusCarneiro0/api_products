@@ -11,7 +11,6 @@ from flask_cors import CORS
 from flask_jwt_extended import (
     JWTManager,
     get_jwt_identity,
-    create_access_token,
 )
 import datetime
 import jwt
@@ -33,27 +32,29 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
 
-algorithm = os.getenv("ALGORITHM","HS256")
+algorithm = os.getenv("ALGORITHM", "HS256")
 
 
-def create_token():
-    token = request.headers.get("Authentication")
-    if token is None:
-        return jsonify(
-            {
-                "error": "No JWT Token",
-            }
-        ), 401
+class NotFoundTokenError(Exception):
+    def __init__(self, message):
+        self.message = message
+
+
+def get_identify_token():
+    authorization = request.headers.get("Authorization")
+    if authorization is None:
+        raise NotFoundTokenError("Not found a token")
+    token = authorization.split(" ")[1]
     return token
 
 
-def create_acess_token(data):
+def create_access_token(identify: str):
     payload = {
-        "id": data,
+        "identify": identify,
         "exp": datetime.datetime.now(datetime.timezone.utc)
-        + datetime.timedelta(days=7),
+        + datetime.timedelta(days=3),
     }
-    token = jwt.encode(key=secret_key_jwt, payload=payload)
+    token = jwt.encode(key=secret_key_jwt, payload=payload, algorithm=algorithm)
     return token
 
 
@@ -63,20 +64,28 @@ def required_authentication(func):
     def wrapper(*args, **kwargs):
 
         try:
-            token = create_token()
+            token = get_identify_token()
 
             data_decoded = jwt.decode(
-                jwt=token,# type:ignore
+                jwt=token,  # type:ignore
                 key=secret_key_jwt,
-                algorithms=[algorithm],  
+                algorithms=[algorithm],
             )
-            return func(*args, **kwargs, id=data_decoded)
-
+            return func(*args, **kwargs, id=data_decoded["identify"])
+        except NotFoundTokenError as err:
+            return jsonify(
+                {
+                    "error": str(err.message),
+                    "type":"inexistent"
+                }
+            ), 401
         except jwt.ExpiredSignatureError:
-            return jsonify({"error": "Expired token", "type_error": "invalid"}), 422
+            return jsonify({"error": "Expired token", "type_error": "expired"}), 422
 
-        except jwt.DecodeError:
-            return jsonify({"error": "Invalid Token", "type_error": "expired"}), 422
+        except jwt.DecodeError as err:
+            return jsonify(
+                {"error": "Invalid Token", "type_error": "invalid", "details": str(err)}
+            ), 422
 
     return wrapper
 
@@ -120,7 +129,7 @@ def createNewUser():
         return jsonify({"error": "repeat usernames", "hasRepeated": True}), 200
     userId = uuid.uuid4().hex
     new_password = generate_password_hash(dados["password"])
-    acess_token = create_access_token(identity=userId)
+    acess_token = create_access_token(identify=userId)
     new_user = User(
         user=dados["user"],  # type:ignore
         password=new_password,  # type:ignore
@@ -245,4 +254,4 @@ def clearCart(id):
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=port, debug=True)
