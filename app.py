@@ -116,7 +116,7 @@ def createNewUser():
         )
     except IntegrityError as e:
         db.session.rollback()
-        return jsonify({"error": "many characters", "manyCharacters": True}), 200
+        return jsonify({"error": "many characters", "manyCharacters": True,"details":str(e)}), 200
     except DataError as e:
         db.session.rollback()
         return jsonify({"error": "many characters", "manyCharacters": True}), 200
@@ -153,13 +153,15 @@ def loginUser():
             selectedUser.password, password
         ):
             return jsonify({"auth": False, "message": "Usuário não encontrado"}), 200
-        acess_token = create_access_token(selectedUser.id)
+        
+        acess_token,refresh_token = create_access_token(selectedUser.id)
         return jsonify(
             {
                 "auth": True,
                 "acess_token": acess_token,
                 "user": selectedUser.user,
                 "cart": selectedUser.cart,
+                "refresh_token":refresh_token
             }
         ), 200
     except Exception as e:
