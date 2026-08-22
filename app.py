@@ -121,7 +121,7 @@ def createNewUser():
         return jsonify({"error": "many characters", "manyCharacters": True,"details":str(e)}), 200
     except DataError as e:
         db.session.rollback()
-        return jsonify({"error": "many characters", "manyCharacters": True}), 200
+        return jsonify({"error": "many characters", "manyCharacters": True,"details":str(e)}), 200
     except Exception as e:
         db.session.rollback()
 
