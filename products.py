@@ -1,5 +1,5 @@
 from app import db, Product,app
-
+import os
 products = [
     {
         "nome": "Maçã Fuji",
@@ -332,6 +332,9 @@ products = [
         "id": "76GtRAUDn1E",
     },
 ]
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", "sqlite:///users.db")
+
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 with app.app_context():
     db.create_all()
     for product in products:
