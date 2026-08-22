@@ -8,10 +8,6 @@ from sqlalchemy.exc import IntegrityError, DataError
 import uuid
 import os
 from flask_cors import CORS
-from flask_jwt_extended import (
-    JWTManager,
-    get_jwt_identity,
-)
 import datetime
 import jwt
 import functools
@@ -242,7 +238,6 @@ def fetchCart(id):
 @required_authentication
 def clearCart(id):
     try:
-        id = get_jwt_identity()
         selectedUser = User.query.get_or_404(id)
         selectedUser.cart = []
         db.session.commit()
