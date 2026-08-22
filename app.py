@@ -8,6 +8,7 @@ import uuid
 import os
 from flask_cors import CORS
 from authentication import create_access_token, required_authentication, refresh_route
+from authentication import create_access_token, required_authentication, refresh_route
 
 uri = os.getenv("DATABASE_URL", "sqlite:///users.db")
 
@@ -95,6 +96,7 @@ def createNewUser():
         return jsonify({"error": "repeat usernames", "hasRepeated": True}), 200
     userId = uuid.uuid4().hex
     new_password = generate_password_hash(dados["password"])
+    acess_token,refresh_token = create_access_token(identify=userId)
     acess_token, refresh_token = create_access_token(identify=userId)
     new_user = User(
         user=dados["user"],  # type:ignore

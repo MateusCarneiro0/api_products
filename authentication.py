@@ -1,4 +1,4 @@
-from flask import request, jsonify
+from flask import jsonify
 from functools import wraps
 import jwt
 from utils.datetime_utils import calculate_now, calculate_date_of_now
