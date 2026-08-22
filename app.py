@@ -8,7 +8,6 @@ import uuid
 import os
 from flask_cors import CORS
 from authentication import create_access_token, required_authentication, refresh_route
-from authentication import create_access_token, required_authentication, refresh_route
 
 uri = os.getenv("DATABASE_URL", "sqlite:///users.db")
 
