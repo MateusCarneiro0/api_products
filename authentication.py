@@ -1,4 +1,4 @@
-from flask import jsonify
+from flask import request, jsonify
 from functools import wraps
 import jwt
 from utils.datetime_utils import calculate_now, calculate_date_of_now
@@ -12,6 +12,12 @@ from utils.jwt_utils import (
 
 
 def create_access_token(identify: str):
+    now = calculate_now()
+
+    refresh_token_expire = calculate_date_of_now(days=7)
+
+    acess_token_expire = calculate_date_of_now(hours=8)
+
     now = calculate_now()
 
     refresh_token_expire = calculate_date_of_now(days=7)
