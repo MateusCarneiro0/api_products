@@ -60,9 +60,9 @@ def required_authentication(func):
 
             return func(*args, **kwargs, id=data_decoded)
         except NotFoundTokenError as err:
-            return jsonify({"error": str(err.message), "type": "inexistent"}), 401
+            return jsonify({"error": str(err.message), "type": "inexistent"}), 422
         except jwt.ExpiredSignatureError:
-            return jsonify({"error": "Expired token", "type_error": "expired"}), 422
+            return jsonify({"error": "Expired token", "type_error": "expired"}), 401
 
         except jwt.DecodeError as err:
             return jsonify(
