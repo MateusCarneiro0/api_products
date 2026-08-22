@@ -1,3 +1,5 @@
+from app import db, Product,app
+
 products = [
     {
         "nome": "Maçã Fuji",
@@ -330,3 +332,20 @@ products = [
         "id": "76GtRAUDn1E",
     },
 ]
+with app.app_context():
+    db.create_all()
+    for product in products:
+            new_product = Product(
+                nome=product["nome"],#type:ignore
+                descricao=product["descricao"],#type:ignore
+                imagem=product["imagem"],#type:ignore
+                alias=product["alias"],#type:ignore
+                categorias=product["categorias"],#type:ignore
+                preco=product["preco"],#type:ignore
+                link=product["link"],#type:ignore
+                categoria=product["categoria"],#type:ignore
+                id=product["id"]#type:ignore
+            )
+
+            db.session.add(new_product)
+            db.session.commit()
