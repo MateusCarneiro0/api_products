@@ -1,8 +1,8 @@
-from flask import request,jsonify
-import datetime
+from flask import request, jsonify
 from functools import wraps
 import jwt
 import os
+from utils.datetime_utils import calculate_now, calculate_date_of_now
 
 algorithm = os.getenv("ALGORITHM", "HS256")
 secret_key_jwt = os.getenv("JWT_SECRET_KEY_APP", "COLOQUE UMA CHAVE IMEDIATAMENTE")
@@ -22,13 +22,34 @@ def get_identify_token():
 
 
 def create_access_token(identify: str):
+    now = calculate_now()
+
+    refresh_token_expire = calculate_date_of_now(days=7)
+
+    acess_token_expire = calculate_date_of_now(hours=8)
+
     acess_token_payload = {
         "identify": identify,
-        "exp": datetime.datetime.now(datetime.timezone.utc)
-        + datetime.timedelta(days=3),
+        "exp": acess_token_expire,
+        "iat": now,
+        "type": "acess",
     }
-    token = jwt.encode(key=secret_key_jwt, payload=acess_token_payload, algorithm=algorithm)
-    return token
+    refresh_token_payload = {
+        "sub": identify,
+        "type": "refresh",
+        "exp": refresh_token_expire,
+        "iat": now,
+    }
+
+    acess_token = jwt.encode(
+        key=secret_key_jwt, payload=acess_token_payload, algorithm=algorithm
+    )
+    
+    refresh_token = jwt.encode(
+        key=secret_key_jwt, payload=refresh_token_payload, algorithm=algorithm
+    )
+
+    return acess_token, refresh_token
 
 
 def required_authentication(func):
@@ -46,12 +67,7 @@ def required_authentication(func):
             )
             return func(*args, **kwargs, id=data_decoded["identify"])
         except NotFoundTokenError as err:
-            return jsonify(
-                {
-                    "error": str(err.message),
-                    "type":"inexistent"
-                }
-            ), 401
+            return jsonify({"error": str(err.message), "type": "inexistent"}), 401
         except jwt.ExpiredSignatureError:
             return jsonify({"error": "Expired token", "type_error": "expired"}), 422
 
@@ -62,3 +78,10 @@ def required_authentication(func):
 
     return wrapper
 
+def refresh_route(func):
+    @wraps(func)
+    def wrapper(*args,**kwargs):
+        try:
+            refresh_token = None
+        except Exception as e:
+            pass
