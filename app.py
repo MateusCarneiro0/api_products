@@ -1,9 +1,8 @@
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import check_password_hash, generate_password_hash
-from products import products
 from sqlalchemy.orm import mapped_column, Mapped
-from sqlalchemy import String, JSON
+from sqlalchemy import String, JSON, Float
 from sqlalchemy.exc import IntegrityError, DataError
 import uuid
 import os
@@ -32,23 +31,45 @@ class User(db.Model):
     cart = mapped_column(JSON)
 
 
+class Product(db.Model):
+    nome: Mapped[str] = mapped_column(String(100), nullable=False)
+    id: Mapped[str] = mapped_column(String(50), primary_key=True)
+    descricao: Mapped[str] = mapped_column(String(250), nullable=False)
+    imagem: Mapped[str] = mapped_column(String(50), nullable=True)
+    categorias = mapped_column(JSON)
+    link: Mapped[str] = mapped_column(String(80), nullable=True)
+    preco: Mapped[float] = mapped_column(Float, nullable=False)
+    categoria: Mapped[str] = mapped_column(String(2), nullable=False)
+    alias: Mapped[str] = mapped_column(String(50), nullable=True)
+
+    # "nome": "Maçã Fuji",
+    #         "descricao": "Maçã fresca, doce e crocante. Excelente para lanches saudáveis e preparo de sucos.",
+    #         "imagem": "/products/maca.png",
+    #         "alias": "Fuji Apple",
+    #         "categorias": ["frutas", "frescos"],
+    #         "preco": 8.9,
+    #         "link": "https://pt.wikipedia.org/wiki/Fuji_(ma%C3%A7%C3%A3)",
+    #         "categoria": "kg",
+    #         "id": "ow7FDsA0hfg",
+
+
 with app.app_context():
     db.create_all()
 
 
-@app.route("/products/<string:id>")
-def fetchProductsId(id):
-    selected_product = list(filter(lambda x: x["id"] == id, products))
-    if selected_product:
-        return jsonify(selected_product), 200
-    else:
-        return jsonify({"error": "product not found"}), 404
+# @app.route("/products/<string:id>")
+# def fetchProductsId(id):
+#     selected_product = list(filter(lambda x: x["id"] == id, products))
+#     if selected_product:
+#         return jsonify(selected_product), 200
+#     else:
+#         return jsonify({"error": "product not found"}), 404
 
 
-@app.route("/")
-@app.route("/products")
-def fetchProducts():
-    return jsonify(products)
+# @app.route("/")
+# @app.route("/products")
+# def fetchProducts():
+#     return jsonify(products)
 
 
 @app.route("/users/createnewuser", methods=["POST"])
@@ -64,7 +85,7 @@ def createNewUser():
         return jsonify({"error": "repeat usernames", "hasRepeated": True}), 200
     userId = uuid.uuid4().hex
     new_password = generate_password_hash(dados["password"])
-    acess_token,refresh_token = create_access_token(identify=userId)
+    acess_token, refresh_token = create_access_token(identify=userId)
     new_user = User(
         user=dados["user"],  # type:ignore
         password=new_password,  # type:ignore
@@ -75,7 +96,14 @@ def createNewUser():
     try:
         db.session.add(new_user)
         db.session.commit()
-        return jsonify({"user": dados["user"], "cart": [], "acess_token": acess_token,"refresh_token":refresh_token})
+        return jsonify(
+            {
+                "user": dados["user"],
+                "cart": [],
+                "acess_token": acess_token,
+                "refresh_token": refresh_token,
+            }
+        )
     except IntegrityError as e:
         db.session.rollback()
         return jsonify({"error": "many characters", "manyCharacters": True}), 200

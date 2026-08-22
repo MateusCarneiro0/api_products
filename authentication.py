@@ -103,4 +103,5 @@ def refresh_route(func):
                     "details": str(err),
                 }
             ), 422
+
     return wrapper
