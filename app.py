@@ -8,12 +8,11 @@ from sqlalchemy.exc import IntegrityError, DataError
 import uuid
 import os
 from flask_cors import CORS
-from authentication import create_access_token,required_authentication
+from authentication import create_access_token, required_authentication, refresh_route
 
 uri = os.getenv("DATABASE_URL", "sqlite:///users.db")
 
 app = Flask(__name__)
-
 
 
 CORS(app)
@@ -65,7 +64,7 @@ def createNewUser():
         return jsonify({"error": "repeat usernames", "hasRepeated": True}), 200
     userId = uuid.uuid4().hex
     new_password = generate_password_hash(dados["password"])
-    acess_token = create_access_token(identify=userId)
+    acess_token,refresh_token = create_access_token(identify=userId)
     new_user = User(
         user=dados["user"],  # type:ignore
         password=new_password,  # type:ignore
@@ -76,7 +75,7 @@ def createNewUser():
     try:
         db.session.add(new_user)
         db.session.commit()
-        return jsonify({"user": dados["user"], "cart": [], "acess_token": acess_token})
+        return jsonify({"user": dados["user"], "cart": [], "acess_token": acess_token,"refresh_token":refresh_token})
     except IntegrityError as e:
         db.session.rollback()
         return jsonify({"error": "many characters", "manyCharacters": True}), 200
@@ -185,6 +184,13 @@ def clearCart(id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/refresh", methods=["POST"])
+@refresh_route
+def refresh(identify):
+    acess_token, refresh_token = create_access_token(identify=identify)
+    return jsonify({"acess_token": acess_token, "refresh_token": refresh_token})
 
 
 if __name__ == "__main__":
