@@ -2,7 +2,7 @@ from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import check_password_hash, generate_password_hash
 from sqlalchemy.orm import mapped_column, Mapped
-from sqlalchemy import String, JSON, Float
+from sqlalchemy import String, JSON, Float, select
 from sqlalchemy.exc import IntegrityError, DataError
 import uuid
 import os
@@ -32,6 +32,7 @@ class User(db.Model):
 
 
 class Product(db.Model):
+
     nome: Mapped[str] = mapped_column(String(100), nullable=False)
     id: Mapped[str] = mapped_column(String(50), primary_key=True)
     descricao: Mapped[str] = mapped_column(String(250), nullable=False)
@@ -42,34 +43,43 @@ class Product(db.Model):
     categoria: Mapped[str] = mapped_column(String(2), nullable=False)
     alias: Mapped[str] = mapped_column(String(50), nullable=True)
 
-    # "nome": "Maçã Fuji",
-    #         "descricao": "Maçã fresca, doce e crocante. Excelente para lanches saudáveis e preparo de sucos.",
-    #         "imagem": "/products/maca.png",
-    #         "alias": "Fuji Apple",
-    #         "categorias": ["frutas", "frescos"],
-    #         "preco": 8.9,
-    #         "link": "https://pt.wikipedia.org/wiki/Fuji_(ma%C3%A7%C3%A3)",
-    #         "categoria": "kg",
-    #         "id": "ow7FDsA0hfg",
+    def to_dict(self):
+        product = {
+            "nome":self.nome,
+            "id":self.id,
+            "link":self.link,
+            "imagem":self.imagem,
+            "alias":self.alias,
+            "categoria":self.categoria,
+            "categorias":self.categorias,
+            "descricao":self.descricao,
+            "preco":self.preco
+        }
+        return product
+
+    
 
 
 with app.app_context():
     db.create_all()
 
 
-# @app.route("/products/<string:id>")
-# def fetchProductsId(id):
-#     selected_product = list(filter(lambda x: x["id"] == id, products))
-#     if selected_product:
-#         return jsonify(selected_product), 200
-#     else:
-#         return jsonify({"error": "product not found"}), 404
+@app.route("/products/<string:id>")
+def fetchProductsId(id):
+    product = Product.query.get_or_404(id)
+    if not product == None:
+        return jsonify(product.to_dict()), 200
+    else:
+        return jsonify({"error": "product not found"}), 404
 
 
-# @app.route("/")
-# @app.route("/products")
-# def fetchProducts():
-#     return jsonify(products)
+@app.route("/")
+@app.route("/products")
+def fetchProducts():
+    selected_products = select(Product).limit(50)
+    raw_products = db.session.scalars(selected_products).all()
+    products = [product.to_dict() for product in raw_products]
+    return jsonify(products)
 
 
 @app.route("/users/createnewuser", methods=["POST"])
