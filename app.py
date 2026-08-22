@@ -36,7 +36,7 @@ class Product(db.Model):
     nome: Mapped[str] = mapped_column(String(100), nullable=False)
     id: Mapped[str] = mapped_column(String(50), primary_key=True)
     descricao: Mapped[str] = mapped_column(String(250), nullable=False)
-    imagem: Mapped[str] = mapped_column(String(150), nullable=True)
+    imagem: Mapped[str] = mapped_column(String(900), nullable=True)
     categorias = mapped_column(JSON)
     link: Mapped[str] = mapped_column(String(80), nullable=True)
     preco: Mapped[float] = mapped_column(Float, nullable=False)
