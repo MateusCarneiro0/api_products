@@ -1,11 +1,13 @@
 from redis import Redis
+from dotenv import load_dotenv
+import os
 
-redis = Redis(host="localhost", port=6379, decode_responses=True)
-redis.set("reids", "aaa", 10)
-a = redis.get("reids")
-print(a)
-print("Deu certo")
+load_dotenv()
 
+redis_port = int(os.getenv("REDIS_PORT",6379))
+redis_host = os.getenv("REDIS_URL","localhost")
+
+redis = Redis(host=redis_host, port=redis_port, decode_responses=True)
 
 def put_in_redis(key, acess_token=False,time=0):
     time_expires = 60 * 60 if acess_token else 7 * 24 * 60 * 60
