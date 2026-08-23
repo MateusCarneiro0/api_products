@@ -9,6 +9,7 @@ from flask_cors import CORS
 from authentication import create_access_token, required_authentication, refresh_route
 from dotenv import load_dotenv
 from redis_manager import put_in_redis
+from utils.jwt_utils import decode_jwt
 
 load_dotenv()
 
@@ -239,8 +240,13 @@ def logout():
                 "type_error": "Insuficient",
             }
         )
-    
-    return jsonify({""})
+    try:
+        expire_time_acess_token = decode_jwt(tokens["acess_token"],"exp")
+        expire_time_refresh_token = decode_jwt(tokens["refresh_token"],"exp")
+
+        return jsonify({""})
+    except:
+        pass
 
 
 if __name__ == "__main__":
