@@ -10,6 +10,7 @@ from authentication import create_access_token, required_authentication, refresh
 from dotenv import load_dotenv
 from redis_manager import put_in_redis
 from utils.jwt_utils import decode_jwt
+from utils.datetime_utils import calculate_seconds_of_now_future_date
 
 load_dotenv()
 
@@ -241,12 +242,15 @@ def logout():
             }
         )
     try:
-        expire_time_acess_token = decode_jwt(tokens["acess_token"],"exp")
-        expire_time_refresh_token = decode_jwt(tokens["refresh_token"],"exp")
+        expire_time_acess_token = calculate_seconds_of_now_future_date(decode_jwt(tokens["acess_token"],"exp"))#type:ignore
+        expire_time_refresh_token = calculate_seconds_of_now_future_date(decode_jwt(tokens["refresh_token"],"exp"))#type:ignore
 
-        return jsonify({""})
-    except:
-        pass
+        put_in_redis(tokens["acess_token"],time=expire_time_acess_token)
+        put_in_redis(tokens["refresh_tokens"],time=expire_time_refresh_token)
+        return jsonify({"status":"correct"}),200
+    except Exception as err:
+        return jsonify({"status":"error","details":str(err)}),200
+
 
 
 if __name__ == "__main__":
