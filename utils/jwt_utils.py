@@ -11,6 +11,11 @@ class NotFoundTokenError(Exception):
         self.message = message
 
 
+class InvalidToken(Exception):
+    def __init__(self, message):
+        self.message = message
+
+
 def get_identify_token():
     authorization = request.headers.get("Authorization")
     if authorization is None:

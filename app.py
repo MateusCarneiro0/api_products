@@ -3,12 +3,12 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import check_password_hash, generate_password_hash
 from sqlalchemy.orm import mapped_column, Mapped
 from sqlalchemy import String, JSON, Float, select
-from sqlalchemy.exc import IntegrityError, DataError
 import uuid
 import os
 from flask_cors import CORS
 from authentication import create_access_token, required_authentication, refresh_route
 from dotenv import load_dotenv
+from redis_manager import put_in_redis
 
 load_dotenv()
 
@@ -226,6 +226,21 @@ def clearCart(id):
 def refresh(identify):
     acess_token, refresh_token = create_access_token(identify=identify)
     return jsonify({"acess_token": acess_token, "refresh_token": refresh_token})
+
+
+@app.route("/users/logout", methods=["DELETE"])
+@required_authentication
+def logout():
+    tokens = request.get_json()
+    if not tokens or not "acess_token" in tokens or not "refresh_token" in tokens:
+        return jsonify(
+            {
+                "error": "É preciso de acess_token e refresh token",
+                "type_error": "Insuficient",
+            }
+        )
+    
+    return jsonify({""})
 
 
 if __name__ == "__main__":
