@@ -12,12 +12,7 @@ from utils.jwt_utils import (
 
 
 def create_access_token(identify: str):
-    now = calculate_now()
-
-    refresh_token_expire = calculate_date_of_now(days=7)
-
-    acess_token_expire = calculate_date_of_now(hours=8)
-
+    
     now = calculate_now()
 
     refresh_token_expire = calculate_date_of_now(days=7)

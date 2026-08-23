@@ -8,6 +8,9 @@ import uuid
 import os
 from flask_cors import CORS
 from authentication import create_access_token, required_authentication, refresh_route
+from dotenv import load_dotenv
+
+load_dotenv()
 
 uri = os.getenv("DATABASE_URL", "sqlite:///users.db")
 
@@ -32,7 +35,6 @@ class User(db.Model):
 
 
 class Product(db.Model):
-
     nome: Mapped[str] = mapped_column(String(100), nullable=False)
     id: Mapped[str] = mapped_column(String(50), primary_key=True)
     descricao: Mapped[str] = mapped_column(String(250), nullable=False)
@@ -45,19 +47,17 @@ class Product(db.Model):
 
     def to_dict(self):
         product = {
-            "nome":self.nome,
-            "id":self.id,
-            "link":self.link,
-            "imagem":self.imagem,
-            "alias":self.alias,
-            "categoria":self.categoria,
-            "categorias":self.categorias,
-            "descricao":self.descricao,
-            "preco":self.preco
+            "nome": self.nome,
+            "id": self.id,
+            "link": self.link,
+            "imagem": self.imagem,
+            "alias": self.alias,
+            "categoria": self.categoria,
+            "categorias": self.categorias,
+            "descricao": self.descricao,
+            "preco": self.preco,
         }
         return product
-
-    
 
 
 with app.app_context():
@@ -95,7 +95,7 @@ def createNewUser():
         return jsonify({"error": "repeat usernames", "hasRepeated": True}), 200
     userId = uuid.uuid4().hex
     new_password = generate_password_hash(dados["password"])
-    acess_token,refresh_token = create_access_token(identify=userId)
+    acess_token, refresh_token = create_access_token(identify=userId)
     acess_token, refresh_token = create_access_token(identify=userId)
     new_user = User(
         user=dados["user"],  # type:ignore
@@ -148,15 +148,15 @@ def loginUser():
             selectedUser.password, password
         ):
             return jsonify({"auth": False, "message": "Usuário não encontrado"}), 200
-        
-        acess_token,refresh_token = create_access_token(selectedUser.id)
+
+        acess_token, refresh_token = create_access_token(selectedUser.id)
         return jsonify(
             {
                 "auth": True,
                 "acess_token": acess_token,
                 "user": selectedUser.user,
                 "cart": selectedUser.cart,
-                "refresh_token":refresh_token
+                "refresh_token": refresh_token,
             }
         ), 200
     except Exception as e:
