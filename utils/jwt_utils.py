@@ -15,7 +15,7 @@ def get_identify_token():
     authorization = request.headers.get("Authorization")
     if authorization is None:
         raise NotFoundTokenError("Not found a token")
-    token = authorization.split(" ")[1]
+    token = authorization.split(" ")[1].strip()
     return token
 
 

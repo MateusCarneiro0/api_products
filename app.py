@@ -115,12 +115,6 @@ def createNewUser():
                 "refresh_token": refresh_token,
             }
         )
-    except IntegrityError as e:
-        db.session.rollback()
-        return jsonify({"error": "many characters", "manyCharacters": True,"details":str(e)}), 200
-    except DataError as e:
-        db.session.rollback()
-        return jsonify({"error": "many characters", "manyCharacters": True,"details":str(e)}), 200
     except Exception as e:
         db.session.rollback()
 
