@@ -1,6 +1,9 @@
 import jwt
 from flask import request
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 secret_key_jwt = os.getenv("JWT_SECRET_KEY_APP", "COLOQUE UMA CHAVE IMEDIATAMENTE")
 algorithm = os.getenv("ALGORITHM", "HS256")
