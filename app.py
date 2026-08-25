@@ -19,7 +19,7 @@ uri = os.getenv("DATABASE_URL", "sqlite:///users.db")
 app = Flask(__name__)
 
 
-CORS(app)
+CORS(app,origins=["http://localhost:5173",""],supports_credentials=True)
 
 if uri.startswith("postgres://"):
     uri = uri.replace("postgres://", "postgresql://", 1)
@@ -106,18 +106,36 @@ def createNewUser():
         id=userId,  # type:ignore
         cart=[],  # type:ignore
     )
-    
+
     try:
         db.session.add(new_user)
         db.session.commit()
-        return jsonify(
-            {
-                "user": dados["user"],
-                "cart": [],
-                "acess_token": acess_token,
-                "refresh_token": refresh_token,
-            }
+        response = make_response(
+            jsonify(
+                {
+                    "user": dados["user"],
+                    "cart": [],
+                }
+            ),
+            201,
         )
+        response.set_cookie(
+            key="acess_token",
+            value=acess_token,
+            max_age=3600,
+            secure=not is_dev,
+            httponly=True,
+        )
+        response.set_cookie(
+            key="refresh_token",
+            value=refresh_token,
+            max_age=3600 * 24 * 7,
+            secure=not is_dev,
+            httponly=True,
+        )
+
+        return response
+
     except Exception as e:
         db.session.rollback()
 
@@ -153,15 +171,33 @@ def loginUser():
             return jsonify({"auth": False, "message": "Usuário não encontrado"}), 200
 
         acess_token, refresh_token = create_access_token(selectedUser.id)
-        return jsonify(
-            {
-                "auth": True,
-                "acess_token": acess_token,
-                "user": selectedUser.user,
-                "cart": selectedUser.cart,
-                "refresh_token": refresh_token,
-            }
-        ), 200
+        response = make_response(
+            jsonify(
+                {
+                    "auth": True,
+                    "acess_token": acess_token,
+                    "user": selectedUser.user,
+                    "cart": selectedUser.cart,
+                    "refresh_token": refresh_token,
+                }
+            ),
+            201,
+        )
+        response.set_cookie(
+            key="acess_token",
+            value=acess_token,
+            max_age=3600,
+            secure=not is_dev,
+            httponly=True,
+        )
+        response.set_cookie(
+            key="refresh_token",
+            value=refresh_token,
+            max_age=3600 * 24 * 7,
+            secure=not is_dev,
+            httponly=True,
+        )
+        return response
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -236,7 +272,15 @@ def refresh(identify):
         max_age=3600,
         httponly=True,
         samesite="None",
-        secure=not is_dev
+        secure=not is_dev,
+    )
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        max_age=3600*24*7,
+        httponly=True,
+        samesite="None",
+        secure=not is_dev,
     )
     return response
 
@@ -256,10 +300,10 @@ def logout():
         acess_token_payload = decode_jwt(tokens["acess_token"])
         expire_time_acess_token = calculate_seconds_of_now_future_date(
             acess_token_payload["exp"]
-        )  # type:ignore
+        )
         expire_time_refresh_token = calculate_seconds_of_now_future_date(
-            decode_jwt(tokens["refresh_token"], "exp")
-        )  # type:ignore
+            decode_jwt(tokens["refresh_token"], "exp")  # type:ignore
+        )
 
         put_in_redis(
             tokens["acess_token"],
