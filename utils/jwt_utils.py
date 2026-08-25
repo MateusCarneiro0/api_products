@@ -19,7 +19,10 @@ class InvalidToken(Exception):
         self.message = message
 
 
-def get_identify_token():
+def get_identify_token(is_acess_token=True):
+    cookies_token = request.cookies.get(f"{"acess_token" if is_acess_token else "refresh_token"}")
+    if not cookies_token == None:
+        return cookies_token
     authorization = request.headers.get("Authorization")
     if authorization is None:
         raise NotFoundTokenError("Not found a token")

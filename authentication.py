@@ -81,7 +81,7 @@ def refresh_route(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         try:
-            refresh_token = get_identify_token()
+            refresh_token = get_identify_token(is_acess_token=False)
             identify = decode_jwt(token=refresh_token, key_payload="sub")
 
             if exists_in_redis(refresh_token, id=identify, is_acess_token=False):
