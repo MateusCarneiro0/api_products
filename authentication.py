@@ -11,6 +11,7 @@ from utils.jwt_utils import (
     InvalidToken,
 )
 from redis_manager import put_in_redis, exists_in_redis
+import uuid
 
 
 def create_access_token(identify: str):
@@ -20,18 +21,21 @@ def create_access_token(identify: str):
     refresh_token_expire = calculate_date_of_now(days=7)
 
     acess_token_expire = calculate_date_of_now(hours=1)
+    session_id = uuid.uuid4().hex
 
     acess_token_payload = {
         "identify": identify,
         "exp": acess_token_expire,
         "iat": now,
         "type": "acess",
+        "session_id": session_id,
     }
     refresh_token_payload = {
         "sub": identify,
         "type": "refresh",
         "exp": refresh_token_expire,
         "iat": now,
+        "session_id": session_id,
     }
 
     acess_token = jwt.encode(
