@@ -19,7 +19,7 @@ uri = os.getenv("DATABASE_URL", "sqlite:///users.db")
 app = Flask(__name__)
 
 
-CORS(app,origins=["http://localhost:5173",""],supports_credentials=True)
+CORS(app, origins=["http://localhost:5173", ""], supports_credentials=True)
 
 if uri.startswith("postgres://"):
     uri = uri.replace("postgres://", "postgresql://", 1)
@@ -277,7 +277,7 @@ def refresh(identify):
     response.set_cookie(
         key="refresh_token",
         value=refresh_token,
-        max_age=3600*24*7,
+        max_age=3600 * 24 * 7,
         httponly=True,
         samesite="None",
         secure=not is_dev,
