@@ -8,8 +8,8 @@ import os
 from flask_cors import CORS
 from authentication import create_access_token, required_authentication, refresh_route
 from dotenv import load_dotenv
-from redis_manager import put_in_redis,delete_in_redis
-from utils.jwt_utils import decode_jwt,get_identify_token
+from redis_manager import put_in_redis
+from utils.jwt_utils import decode_jwt
 from utils.datetime_utils import calculate_seconds_of_now_future_date
 
 load_dotenv()
@@ -98,7 +98,7 @@ def createNewUser():
     userId = uuid.uuid4().hex
     new_password = generate_password_hash(dados["password"])
     acess_token, refresh_token = create_access_token(identify=userId)
-    
+    acess_token, refresh_token = create_access_token(identify=userId)
     new_user = User(
         user=dados["user"],  # type:ignore
         password=new_password,  # type:ignore
@@ -150,7 +150,7 @@ def loginUser():
             selectedUser.password, password
         ):
             return jsonify({"auth": False, "message": "Usuário não encontrado"}), 200
-        delete_in_redis(f"*:{selectedUser.id}:*")
+
         acess_token, refresh_token = create_access_token(selectedUser.id)
         return jsonify(
             {
@@ -233,13 +233,23 @@ def refresh(identify):
 @app.route("/users/logout", methods=["DELETE"])
 @required_authentication
 def logout():
+    tokens = request.get_json()
+    if not tokens or not "acess_token" in tokens or not "refresh_token" in tokens:
+        return jsonify(
+            {
+                "error": "É preciso de acess_token e refresh token",
+                "type_error": "Insuficient",
+            }
+        )
     try:
-        acess_token = get_identify_token()
-        identify = decode_jwt(acess_token,"identify")
-        delete_in_redis(f"*:{identify}:*")
+        expire_time_acess_token = calculate_seconds_of_now_future_date(decode_jwt(tokens["acess_token"],"exp"))#type:ignore
+        expire_time_refresh_token = calculate_seconds_of_now_future_date(decode_jwt(tokens["refresh_token"],"exp"))#type:ignore
+
+        put_in_redis(tokens["acess_token"],time=expire_time_acess_token)
+        put_in_redis(tokens["refresh_tokens"],time=expire_time_refresh_token)
         return jsonify({"status":"correct"}),200
     except Exception as err:
-        return jsonify({"status":"error","details":str(err)}),400
+        return jsonify({"status":"error","details":str(err)}),200
 
 
 

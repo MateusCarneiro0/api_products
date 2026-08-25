@@ -10,7 +10,7 @@ from utils.jwt_utils import (
     algorithm,
     InvalidToken,
 )
-from redis_manager import put_in_redis, exists_in_redis,delete_in_redis
+from redis_manager import put_in_redis, exists_in_redis
 
 
 def create_access_token(identify: str):
@@ -41,8 +41,6 @@ def create_access_token(identify: str):
     refresh_token = jwt.encode(
         key=secret_key_jwt, payload=refresh_token_payload, algorithm=algorithm
     )
-    put_in_redis(f"acess_token:{identify}:{acess_token}",True)
-    put_in_redis(f"refresh_token:{identify}:{refresh_token}",False)  
 
     return acess_token, refresh_token
 
@@ -54,7 +52,7 @@ def required_authentication(func):
 
         try:
             token = get_identify_token()
-            if not exists_in_redis(f"acess_token:*:{token}"):
+            if exists_in_redis(token):
                 raise InvalidToken("The token is invalid")
             data_decoded = decode_jwt(token=token, key_payload="identify")
 
@@ -84,13 +82,11 @@ def refresh_route(func):
     def wrapper(*args, **kwargs):
         try:
             refresh_token = get_identify_token()
-            if not exists_in_redis(f"refresh_token:*:{refresh_token}"):
+            if exists_in_redis(refresh_token):
                 raise InvalidToken("The token is invalid")
             identify = decode_jwt(token=refresh_token, key_payload="sub")
-            
             if identify:
-                delete_in_redis(f"refresh_token:{identify}:{refresh_token}")
-                delete_in_redis(f"acess_token:{identify}:*")
+                put_in_redis(refresh_token, False)
                 return func(*args, **kwargs, identify=identify)
             else:
                 raise Exception("No identify")
