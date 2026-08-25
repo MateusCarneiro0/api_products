@@ -134,6 +134,14 @@ def createNewUser():
             httponly=True,
         )
 
+        response.set_cookie(
+            key="is_logged",
+            value="true",
+            max_age=3600 * 24 * 7,
+            secure=not is_dev,
+            httponly=False,
+        )
+
         return response
 
     except Exception as e:
@@ -196,6 +204,13 @@ def loginUser():
             max_age=3600 * 24 * 7,
             secure=not is_dev,
             httponly=True,
+        )
+        response.set_cookie(
+            key="is_logged",
+            value="true",
+            max_age=3600 * 24 * 7,
+            secure=not is_dev,
+            httponly=False,
         )
         return response
     except Exception as e:
@@ -281,6 +296,13 @@ def refresh(identify):
         httponly=True,
         samesite="None",
         secure=not is_dev,
+    )
+    response.set_cookie(
+            key="is_logged",
+            value="true",
+            max_age=3600 * 24 * 7,
+            secure=not is_dev,
+            httponly=False,
     )
     return response
 
