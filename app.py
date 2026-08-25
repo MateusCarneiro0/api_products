@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, make_response
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import check_password_hash, generate_password_hash
 from sqlalchemy.orm import mapped_column, Mapped
@@ -27,6 +27,8 @@ app.config["SQLALCHEMY_DATABASE_URI"] = uri
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
+
+is_dev = os.getenv("DEV", "true") == "true"
 
 
 class User(db.Model):
@@ -98,14 +100,13 @@ def createNewUser():
     userId = uuid.uuid4().hex
     new_password = generate_password_hash(dados["password"])
     acess_token, refresh_token = create_access_token(identify=userId)
-    acess_token, refresh_token = create_access_token(identify=userId)
     new_user = User(
         user=dados["user"],  # type:ignore
         password=new_password,  # type:ignore
         id=userId,  # type:ignore
         cart=[],  # type:ignore
     )
-
+    
     try:
         db.session.add(new_user)
         db.session.commit()
@@ -227,7 +228,17 @@ def clearCart(id):
 @refresh_route
 def refresh(identify):
     acess_token, refresh_token = create_access_token(identify=identify)
-    return jsonify({"acess_token": acess_token, "refresh_token": refresh_token})
+    response = make_response(jsonify({"status": "refreshed"}))
+
+    response.set_cookie(
+        key="acess_token",
+        value=acess_token,
+        max_age=3600,
+        httponly=True,
+        samesite="None",
+        secure=not is_dev
+    )
+    return response
 
 
 @app.route("/users/logout", methods=["DELETE"])
@@ -242,15 +253,27 @@ def logout():
             }
         )
     try:
-        expire_time_acess_token = calculate_seconds_of_now_future_date(decode_jwt(tokens["acess_token"],"exp"))#type:ignore
-        expire_time_refresh_token = calculate_seconds_of_now_future_date(decode_jwt(tokens["refresh_token"],"exp"))#type:ignore
+        acess_token_payload = decode_jwt(tokens["acess_token"])
+        expire_time_acess_token = calculate_seconds_of_now_future_date(
+            acess_token_payload["exp"]
+        )  # type:ignore
+        expire_time_refresh_token = calculate_seconds_of_now_future_date(
+            decode_jwt(tokens["refresh_token"], "exp")
+        )  # type:ignore
 
-        put_in_redis(tokens["acess_token"],time=expire_time_acess_token)
-        put_in_redis(tokens["refresh_tokens"],time=expire_time_refresh_token)
-        return jsonify({"status":"correct"}),200
+        put_in_redis(
+            tokens["acess_token"],
+            time=expire_time_acess_token,
+            id=acess_token_payload["identify"],
+        )
+        put_in_redis(
+            tokens["refresh_token"],
+            time=expire_time_refresh_token,
+            id=acess_token_payload["identify"],
+        )
+        return jsonify({"status": "correct"}), 200
     except Exception as err:
-        return jsonify({"status":"error","details":str(err)}),200
-
+        return jsonify({"status": "error", "details": str(err)}), 200
 
 
 if __name__ == "__main__":

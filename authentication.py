@@ -52,9 +52,9 @@ def required_authentication(func):
 
         try:
             token = get_identify_token()
-            if exists_in_redis(token):
-                raise InvalidToken("The token is invalid")
             data_decoded = decode_jwt(token=token, key_payload="identify")
+            if exists_in_redis(key=token, id=data_decoded, is_acess_token=True):
+                raise InvalidToken("The token is invalid")
 
             return func(*args, **kwargs, id=data_decoded)
 
@@ -82,11 +82,13 @@ def refresh_route(func):
     def wrapper(*args, **kwargs):
         try:
             refresh_token = get_identify_token()
-            if exists_in_redis(refresh_token):
-                raise InvalidToken("The token is invalid")
             identify = decode_jwt(token=refresh_token, key_payload="sub")
+
+            if exists_in_redis(refresh_token, id=identify, is_acess_token=False):
+                raise InvalidToken("The token is invalid")
+
             if identify:
-                put_in_redis(refresh_token, False)
+                put_in_redis(refresh_token, id=identify, acess_token=False)
                 return func(*args, **kwargs, identify=identify)
             else:
                 raise Exception("No identify")
