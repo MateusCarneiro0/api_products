@@ -15,11 +15,11 @@ from utils.datetime_utils import calculate_seconds_of_now_future_date
 load_dotenv()
 
 uri = os.getenv("DATABASE_URL", "sqlite:///users.db")
-
+client_site = os.getenv("CLIENT_SITE","localhost:3000")
 app = Flask(__name__)
 
 
-CORS(app, origins=["http://localhost:5173", ""], supports_credentials=True)
+CORS(app, origins=["http://localhost:5173", client_site], supports_credentials=True)
 
 if uri.startswith("postgres://"):
     uri = uri.replace("postgres://", "postgresql://", 1)
