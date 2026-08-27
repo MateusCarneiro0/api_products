@@ -7,7 +7,11 @@ load_dotenv()
 redis_port = int(os.getenv("REDIS_PORT", 6379))
 redis_host = os.getenv("REDIS_URL", "localhost")
 
-redis = Redis(host=redis_host, port=redis_port, decode_responses=True, db=0) if redis_host == "localhost" or redis_host == "127.0.0.1" else Redis.from_url(redis_host,db=0,decode_responses=True)
+redis = (
+    Redis(host=redis_host, port=redis_port, decode_responses=True, db=0)
+    if redis_host == "localhost" or redis_host == "127.0.0.1"
+    else Redis.from_url(redis_host, db=0, decode_responses=True)
+)
 
 if redis.ping():
     print("REDIS CONNECTION SUCESSFULLY")

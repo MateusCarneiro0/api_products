@@ -15,7 +15,7 @@ from utils.datetime_utils import calculate_seconds_of_now_future_date
 load_dotenv()
 
 uri = os.getenv("DATABASE_URL", "sqlite:///users.db")
-client_site = os.getenv("CLIENT_SITE","localhost:3000")
+client_site = os.getenv("CLIENT_SITE", "localhost:3000")
 app = Flask(__name__)
 
 
@@ -125,6 +125,7 @@ def createNewUser():
             max_age=3600,
             secure=not is_dev,
             httponly=True,
+            samesite="None",
         )
         response.set_cookie(
             key="refresh_token",
@@ -132,6 +133,7 @@ def createNewUser():
             max_age=3600 * 24 * 7,
             secure=not is_dev,
             httponly=True,
+            samesite="None",
         )
 
         response.set_cookie(
@@ -140,6 +142,7 @@ def createNewUser():
             max_age=3600 * 24 * 7,
             secure=not is_dev,
             httponly=False,
+            samesite="None",
         )
 
         return response
@@ -298,11 +301,11 @@ def refresh(identify):
         secure=not is_dev,
     )
     response.set_cookie(
-            key="is_logged",
-            value="true",
-            max_age=3600 * 24 * 7,
-            secure=not is_dev,
-            httponly=False,
+        key="is_logged",
+        value="true",
+        max_age=3600 * 24 * 7,
+        secure=not is_dev,
+        httponly=False,
     )
     return response
 
