@@ -186,10 +186,8 @@ def loginUser():
             jsonify(
                 {
                     "auth": True,
-                    "acess_token": acess_token,
                     "user": selectedUser.user,
                     "cart": selectedUser.cart,
-                    "refresh_token": refresh_token,
                 }
             ),
             201,
@@ -200,6 +198,7 @@ def loginUser():
             max_age=3600,
             secure=not is_dev,
             httponly=True,
+            samesite="None",
         )
         response.set_cookie(
             key="refresh_token",
@@ -207,6 +206,7 @@ def loginUser():
             max_age=3600 * 24 * 7,
             secure=not is_dev,
             httponly=True,
+            samesite="None",
         )
         response.set_cookie(
             key="is_logged",
@@ -214,6 +214,7 @@ def loginUser():
             max_age=3600 * 24 * 7,
             secure=not is_dev,
             httponly=False,
+            samesite="None",
         )
         return response
     except Exception as e:
@@ -306,6 +307,7 @@ def refresh(identify):
         max_age=3600 * 24 * 7,
         secure=not is_dev,
         httponly=False,
+        samesite="None",
     )
     return response
 
