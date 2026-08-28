@@ -123,7 +123,7 @@ def createNewUser():
             key="acess_token",
             value=acess_token,
             max_age=3600,
-            secure=not is_dev,
+            secure=True,
             httponly=True,
             samesite="None",
         )
@@ -131,7 +131,7 @@ def createNewUser():
             key="refresh_token",
             value=refresh_token,
             max_age=3600 * 24 * 7,
-            secure=not is_dev,
+            secure=True,
             httponly=True,
             samesite="None",
         )
@@ -140,7 +140,7 @@ def createNewUser():
             key="is_logged",
             value="true",
             max_age=3600 * 24 * 7,
-            secure=not is_dev,
+            secure=True,
             httponly=False,
             samesite="None",
         )
@@ -196,7 +196,7 @@ def loginUser():
             key="acess_token",
             value=acess_token,
             max_age=3600,
-            secure=not is_dev,
+            secure=True,
             httponly=True,
             samesite="None",
         )
@@ -204,7 +204,7 @@ def loginUser():
             key="refresh_token",
             value=refresh_token,
             max_age=3600 * 24 * 7,
-            secure=not is_dev,
+            secure=True,
             httponly=True,
             samesite="None",
         )
@@ -212,7 +212,7 @@ def loginUser():
             key="is_logged",
             value="true",
             max_age=3600 * 24 * 7,
-            secure=not is_dev,
+            secure=True,
             httponly=False,
             samesite="None",
         )
@@ -291,7 +291,7 @@ def refresh(identify):
         max_age=3600,
         httponly=True,
         samesite="None",
-        secure=not is_dev,
+        secure=True
     )
     response.set_cookie(
         key="refresh_token",
@@ -305,7 +305,7 @@ def refresh(identify):
         key="is_logged",
         value="true",
         max_age=3600 * 24 * 7,
-        secure=not is_dev,
+        secure=True,
         httponly=False,
         samesite="None",
     )
@@ -348,5 +348,6 @@ def logout():
 
 
 if __name__ == "__main__":
+    host = "localhost" if is_dev else "0.0.0.0"
     port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=True)
+    app.run(host=host, port=port, debug=True)
