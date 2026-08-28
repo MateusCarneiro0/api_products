@@ -9,7 +9,7 @@ from flask_cors import CORS
 from authentication import create_access_token, required_authentication, refresh_route
 from dotenv import load_dotenv
 from redis_manager import put_in_redis
-from utils.jwt_utils import decode_jwt
+from utils.jwt_utils import decode_jwt,get_cookies_refresh
 from utils.datetime_utils import calculate_seconds_of_now_future_date
 
 load_dotenv()
@@ -314,8 +314,8 @@ def refresh(identify):
 
 @app.route("/users/logout", methods=["DELETE"])
 @required_authentication
-def logout():
-    tokens = request.get_json()
+def logout(id):
+    tokens = get_cookies_refresh()
     if not tokens or not "acess_token" in tokens or not "refresh_token" in tokens:
         return jsonify(
             {
