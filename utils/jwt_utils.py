@@ -23,10 +23,10 @@ def get_identify_token(is_acess_token=True):
     cookies_token = request.cookies.get(
         f"{'acess_token' if is_acess_token else 'refresh_token'}"
     )
-    if not cookies_token == None:
+    if cookies_token:
         return cookies_token
     authorization = request.headers.get("Authorization")
-    if authorization is None:
+    if not authorization:
         raise NotFoundTokenError("Not found a token")
     token = authorization.split(" ")[1].strip()
     return token

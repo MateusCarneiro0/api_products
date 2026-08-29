@@ -53,7 +53,6 @@ def required_authentication(func):
 
     @wraps(func)
     def wrapper(*args, **kwargs):
-
         try:
             token = get_identify_token()
             data_decoded = decode_jwt(token=token, key_payload="identify")
@@ -63,6 +62,9 @@ def required_authentication(func):
             return func(*args, **kwargs, id=data_decoded)
 
         except NotFoundTokenError as err:
+            refresh_token = get_identify_token(is_acess_token=False)
+            if refresh_token:
+                return jsonify({"error": "Expired token", "type_error": "expired"}), 401
             return jsonify({"error": str(err.message), "type": "inexistent"}), 422
 
         except jwt.ExpiredSignatureError:
@@ -74,6 +76,9 @@ def required_authentication(func):
             ), 422
 
         except jwt.DecodeError as err:
+            refresh_token = get_identify_token(is_acess_token=False)
+            if refresh_token:
+                return jsonify({"error": "Expired token", "type_error": "expired"}), 401
             return jsonify(
                 {"error": "Invalid Token", "type_error": "invalid", "details": str(err)}
             ), 422

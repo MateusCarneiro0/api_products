@@ -283,6 +283,7 @@ def clearCart(id):
 @refresh_route
 def refresh(identify):
     acess_token, refresh_token = create_access_token(identify=identify)
+    
     response = make_response(jsonify({"status": "refreshed"}))
 
     response.set_cookie(
