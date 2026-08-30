@@ -337,16 +337,17 @@ def logout(id):
             tokens["acess_token"],
             time=int(expire_time_acess_token),
             id=acess_token_payload["identify"],
+            acess_token=True
         )
         put_in_redis(
             tokens["refresh_token"],
             time=int(expire_time_refresh_token),
             id=acess_token_payload["identify"],
-            
+            acess_token=False
         )
         return jsonify({"status": "correct"}), 200
     except Exception as err:
-        return jsonify({"status": "error", "details": str(err)}), 200
+        return jsonify({"status": "error", "details": str(err)}), 500
 
 
 if __name__ == "__main__":
