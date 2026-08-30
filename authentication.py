@@ -19,23 +19,24 @@ def create_access_token(identify: str):
     now = calculate_now()
 
     refresh_token_expire = calculate_date_of_now(days=7)
-
     acess_token_expire = calculate_date_of_now(hours=1)
     session_id = uuid.uuid4().hex
 
     acess_token_payload = {
         "identify": identify,
-        "exp": acess_token_expire,
-        "iat": now,
+        "exp": int(acess_token_expire.timestamp()),
+        "iat": int(now.timestamp()),
         "type": "acess",
         "session_id": session_id,
+        "expiration_date": acess_token_expire.isoformat(),
     }
     refresh_token_payload = {
         "sub": identify,
         "type": "refresh",
-        "exp": refresh_token_expire,
-        "iat": now,
+        "exp": int(refresh_token_expire.timestamp()),
+        "iat": int(now.timestamp()),
         "session_id": session_id,
+        "expiration_date": refresh_token_expire.isoformat(),
     }
 
     acess_token = jwt.encode(
@@ -47,6 +48,7 @@ def create_access_token(identify: str):
     )
 
     return acess_token, refresh_token
+
 
 
 def required_authentication(func):

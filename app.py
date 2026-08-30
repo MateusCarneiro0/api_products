@@ -327,21 +327,22 @@ def logout(id):
     try:
         acess_token_payload = decode_jwt(tokens["acess_token"])
         expire_time_acess_token = calculate_seconds_of_now_future_date(
-            acess_token_payload["exp"]
+            acess_token_payload["expiration_date"]
         )
         expire_time_refresh_token = calculate_seconds_of_now_future_date(
-            decode_jwt(tokens["refresh_token"], "exp")  # type:ignore
+            decode_jwt(tokens["refresh_token"], "expiration_date")  # type:ignore
         )
 
         put_in_redis(
             tokens["acess_token"],
-            time=expire_time_acess_token,
+            time=int(expire_time_acess_token),
             id=acess_token_payload["identify"],
         )
         put_in_redis(
             tokens["refresh_token"],
-            time=expire_time_refresh_token,
+            time=int(expire_time_refresh_token),
             id=acess_token_payload["identify"],
+            
         )
         return jsonify({"status": "correct"}), 200
     except Exception as err:
