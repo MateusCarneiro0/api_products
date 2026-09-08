@@ -19,7 +19,7 @@ client_site = os.getenv("CLIENT_SITE", "localhost:3000")
 app = Flask(__name__)
 
 
-CORS(app, origins=["http://localhost:5173", client_site], supports_credentials=True)
+CORS(app, origins=["http://localhost:5173", client_site,"http://localhost:4173"], supports_credentials=True)
 
 if uri.startswith("postgres://"):
     uri = uri.replace("postgres://", "postgresql://", 1)
