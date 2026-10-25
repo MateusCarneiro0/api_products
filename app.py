@@ -14,7 +14,7 @@ from utils.datetime_utils import calculate_seconds_of_now_future_date
 
 load_dotenv()
 
-uri = os.getenv("DATABASE_URL", "sqlite:///users.db")
+uri = os.getenv("DATABASE_URL", "")
 client_site = os.getenv("CLIENT_SITE", "localhost:3000")
 app = Flask(__name__)
 
@@ -48,7 +48,7 @@ class Product(db.Model):
     descricao: Mapped[str] = mapped_column(String(250), nullable=False)
     imagem: Mapped[str] = mapped_column(String(900), nullable=True)
     categorias = mapped_column(JSON)
-    link: Mapped[str] = mapped_column(String(80), nullable=True)
+    link: Mapped[str] = mapped_column(String(150), nullable=True)
     preco: Mapped[float] = mapped_column(Float, nullable=False)
     categoria: Mapped[str] = mapped_column(String(2), nullable=False)
     alias: Mapped[str] = mapped_column(String(50), nullable=True)
@@ -349,7 +349,7 @@ def logout(id):
             id=acess_token_payload["identify"],
             acess_token=False
         )
-        return jsonify({"status": "correct"}), 200
+        return jsonify({"status": "ok"}), 200
     except Exception as err:
         return jsonify({"status": "error", "details": str(err)}), 500
 
