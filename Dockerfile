@@ -2,6 +2,8 @@ FROM python:3.13.18-slim AS builder
 
 WORKDIR /app
 
+RUN python -m venv /app/venv
+
 ENV PATH="/app/venv/bin:$PATH"
 
 COPY ./requirements.txt /app/requirements.txt
@@ -20,5 +22,5 @@ ENV PATH="/app/venv/bin:$PATH"
 
 EXPOSE 3000
 
-CMD ["guvicorn","--bind","0.0.0.0:3000","app:app"]
+CMD ["gunicorn","--bind","0.0.0.0:3000","app:app"]
 
