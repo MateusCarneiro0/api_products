@@ -67,11 +67,6 @@ class Product(db.Model):
         }
         return product
 
-
-with app.app_context():
-    db.create_all()
-
-
 @app.route("/products/<string:id>")
 def fetchProductsId(id):
     product = Product.query.get_or_404(id)
