@@ -1,20 +1,22 @@
 from flask import Flask, jsonify, request, make_response
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import check_password_hash, generate_password_hash
-from sqlalchemy.orm import mapped_column, Mapped
-from sqlalchemy import String, JSON, Float, select
+from sqlalchemy import  select
 import uuid
 import os
 from flask_cors import CORS
-from app.auth.authentication import (
+from .auth.authentication import (
     create_access_token,
     required_authentication,
     refresh_route,
 )
+from .db import db
+from .db.models.User import User
+from .db.models.Product import Product
 from dotenv import load_dotenv
-from app.redis.redis_manager import put_in_redis
-from utils.jwt_utils import decode_jwt, get_cookies_refresh
-from utils.datetime_utils import calculate_seconds_of_now_future_date
+from .redis.redis_manager import put_in_redis
+from .utils.jwt_utils import decode_jwt, get_cookies_refresh
+from .utils.datetime_utils import calculate_seconds_of_now_future_date
 
 load_dotenv()
 
@@ -33,48 +35,13 @@ if uri.startswith("postgres://"):
     uri = uri.replace("postgres://", "postgresql://", 1)
 app.config["SQLALCHEMY_DATABASE_URI"] = uri
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-
-db = SQLAlchemy(app)
 app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_pre_ping": True,
     "pool_recycle": 1800,
 }
+db.init_app(app=app)
 
 is_dev = os.getenv("DEV", "true") == "true"
-
-
-class User(db.Model):
-    id: Mapped[str] = mapped_column(String(300), primary_key=True)
-    user: Mapped[str] = mapped_column(String(100), nullable=True, unique=True)
-    password: Mapped[str] = mapped_column(String(300), nullable=True)
-    cart = mapped_column(JSON)
-
-
-class Product(db.Model):
-    nome: Mapped[str] = mapped_column(String(100), nullable=False)
-    id: Mapped[str] = mapped_column(String(50), primary_key=True)
-    descricao: Mapped[str] = mapped_column(String(250), nullable=False)
-    imagem: Mapped[str] = mapped_column(String(900), nullable=True)
-    categorias = mapped_column(JSON)
-    link: Mapped[str] = mapped_column(String(150), nullable=True)
-    preco: Mapped[float] = mapped_column(Float, nullable=False)
-    categoria: Mapped[str] = mapped_column(String(2), nullable=False)
-    alias: Mapped[str] = mapped_column(String(50), nullable=True)
-
-    def to_dict(self):
-        product = {
-            "nome": self.nome,
-            "id": self.id,
-            "link": self.link,
-            "imagem": self.imagem,
-            "alias": self.alias,
-            "categoria": self.categoria,
-            "categorias": self.categorias,
-            "descricao": self.descricao,
-            "preco": self.preco,
-        }
-        return product
-
 
 @app.route("/products/<string:id>")
 def fetchProductsId(id):
