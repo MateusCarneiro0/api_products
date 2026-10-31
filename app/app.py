@@ -6,10 +6,14 @@ from sqlalchemy import String, JSON, Float, select
 import uuid
 import os
 from flask_cors import CORS
-from app.auth.authentication import create_access_token, required_authentication, refresh_route
+from app.auth.authentication import (
+    create_access_token,
+    required_authentication,
+    refresh_route,
+)
 from dotenv import load_dotenv
 from app.redis.redis_manager import put_in_redis
-from utils.jwt_utils import decode_jwt,get_cookies_refresh
+from utils.jwt_utils import decode_jwt, get_cookies_refresh
 from utils.datetime_utils import calculate_seconds_of_now_future_date
 
 load_dotenv()
@@ -19,7 +23,11 @@ client_site = os.getenv("CLIENT_SITE", "localhost:3000")
 app = Flask(__name__)
 
 
-CORS(app, origins=["http://localhost:5173", client_site,"http://localhost:4173"], supports_credentials=True)
+CORS(
+    app,
+    origins=["http://localhost:5173", client_site, "http://localhost:4173"],
+    supports_credentials=True,
+)
 
 if uri.startswith("postgres://"):
     uri = uri.replace("postgres://", "postgresql://", 1)
@@ -27,7 +35,7 @@ app.config["SQLALCHEMY_DATABASE_URI"] = uri
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
-app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_pre_ping": True,
     "pool_recycle": 1800,
 }
@@ -66,6 +74,7 @@ class Product(db.Model):
             "preco": self.preco,
         }
         return product
+
 
 @app.route("/products/<string:id>")
 def fetchProductsId(id):
@@ -282,7 +291,7 @@ def clearCart(id):
 @refresh_route
 def refresh(identify):
     acess_token, refresh_token = create_access_token(identify=identify)
-    
+
     response = make_response(jsonify({"status": "refreshed"}))
 
     response.set_cookie(
@@ -291,7 +300,7 @@ def refresh(identify):
         max_age=3600,
         httponly=True,
         samesite="None",
-        secure=True
+        secure=True,
     )
     response.set_cookie(
         key="refresh_token",
@@ -336,13 +345,13 @@ def logout(id):
             tokens["acess_token"],
             time=int(expire_time_acess_token),
             id=acess_token_payload["identify"],
-            acess_token=True
+            acess_token=True,
         )
         put_in_redis(
             tokens["refresh_token"],
             time=int(expire_time_refresh_token),
             id=acess_token_payload["identify"],
-            acess_token=False
+            acess_token=False,
         )
         return jsonify({"status": "ok"}), 200
     except Exception as err:

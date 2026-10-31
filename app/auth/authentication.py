@@ -50,7 +50,6 @@ def create_access_token(identify: str):
     return acess_token, refresh_token
 
 
-
 def required_authentication(func):
 
     @wraps(func)

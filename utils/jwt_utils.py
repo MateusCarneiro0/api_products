@@ -37,10 +37,11 @@ def decode_jwt(token, key_payload=""):
 
     return payload[key_payload] if key_payload else payload
 
+
 def get_cookies_refresh():
     acess_token_cookie = request.cookies.get("acess_token")
     refresh_token_cookie = request.cookies.get("refresh_token")
-    if(not acess_token_cookie or not refresh_token_cookie ):
+    if not acess_token_cookie or not refresh_token_cookie:
         tokens = request.get_json()
         return tokens
-    return {"acess_token":acess_token_cookie,"refresh_token":refresh_token_cookie}
+    return {"acess_token": acess_token_cookie, "refresh_token": refresh_token_cookie}

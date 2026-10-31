@@ -341,7 +341,6 @@ app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", "sqlite:///use
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 with app.app_context():
-    db.create_all()
     for product in products:
         new_product = Product(
             nome=product["nome"],  # type:ignore
