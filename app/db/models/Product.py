@@ -3,6 +3,8 @@ from sqlalchemy.orm import Mapped,mapped_column
 from sqlalchemy import String,JSON,Float
 
 class Product(db.Model):
+    __tablename__ = "products"
+
     nome: Mapped[str] = mapped_column(String(100), nullable=False)
     id: Mapped[str] = mapped_column(String(50), primary_key=True)
     descricao: Mapped[str] = mapped_column(String(250), nullable=False)
