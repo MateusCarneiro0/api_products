@@ -6,9 +6,9 @@ from sqlalchemy import String, JSON, Float, select
 import uuid
 import os
 from flask_cors import CORS
-from authentication import create_access_token, required_authentication, refresh_route
+from app.auth.authentication import create_access_token, required_authentication, refresh_route
 from dotenv import load_dotenv
-from redis_manager import put_in_redis
+from app.redis.redis_manager import put_in_redis
 from utils.jwt_utils import decode_jwt,get_cookies_refresh
 from utils.datetime_utils import calculate_seconds_of_now_future_date
 

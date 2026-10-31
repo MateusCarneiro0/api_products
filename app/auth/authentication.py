@@ -10,7 +10,7 @@ from utils.jwt_utils import (
     algorithm,
     InvalidToken,
 )
-from redis_manager import put_in_redis, exists_in_redis
+from app.redis.redis_manager import put_in_redis, exists_in_redis
 import uuid
 
 
