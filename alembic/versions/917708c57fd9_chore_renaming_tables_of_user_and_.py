@@ -1,7 +1,7 @@
 """chore renaming tables of "user" and "product"
 
 Revision ID: 917708c57fd9
-Revises: 7cc3bd6956c6
+Revises: 07f8c081dc97
 Create Date: 2026-10-30 23:03:55.114741
 
 """
@@ -11,7 +11,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision: str = '917708c57fd9'
-down_revision: str | Sequence[str] | None = '7cc3bd6956c6'
+down_revision: str | Sequence[str] | None = '07f8c081dc97'
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
