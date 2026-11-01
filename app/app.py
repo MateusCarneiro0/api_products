@@ -1,331 +1,48 @@
-from flask import Flask, jsonify, request, make_response
-from flask_sqlalchemy import SQLAlchemy
-from werkzeug.security import check_password_hash, generate_password_hash
+from flask import Flask, jsonify
+
 from sqlalchemy import  select
-import uuid
-import os
 from flask_cors import CORS
-from .auth.authentication import (
-    create_access_token,
-    required_authentication,
-    refresh_route,
-)
+
 from .db import db
-from .db.models.User import User
 from .db.models.Product import Product
 from dotenv import load_dotenv
-from .redis.redis_manager import put_in_redis
-from .utils.jwt_utils import decode_jwt, get_cookies_refresh
-from .utils.datetime_utils import calculate_seconds_of_now_future_date
+from .env_variables import url,client_site,host,port,is_dev
 
 load_dotenv()
-
-uri = os.getenv("DATABASE_URL", "")
-client_site = os.getenv("CLIENT_SITE", "localhost:3000")
-app = Flask(__name__)
+def create_app():
+    app = Flask(__name__)
 
 
-CORS(
-    app,
-    origins=["http://localhost:5173", client_site, "http://localhost:4173"],
-    supports_credentials=True,
-)
-
-if uri.startswith("postgres://"):
-    uri = uri.replace("postgres://", "postgresql://", 1)
-app.config["SQLALCHEMY_DATABASE_URI"] = uri
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-    "pool_pre_ping": True,
-    "pool_recycle": 1800,
-}
-db.init_app(app=app)
-
-is_dev = os.getenv("DEV", "true") == "true"
-
-@app.route("/products/<string:id>")
-def fetchProductsId(id):
-    product = Product.query.get_or_404(id)
-    if not product == None:
-        return jsonify(product.to_dict()), 200
+    CORS(
+        app,
+        origins=["http://localhost:5173", client_site, "http://localhost:4173"],
+        supports_credentials=True,
+    )
+    treated_uri = ""
+    
+    if url.startswith("postgres://"):
+        treated_uri = url.replace("postgres://", "postgresql://", 1)
     else:
-        return jsonify({"error": "product not found"}), 404
+        treated_uri = url
+    
+    app.config["SQLALCHEMY_DATABASE_URI"] = treated_uri
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+        "pool_pre_ping": True,
+        "pool_recycle": 1800,
+    }
 
+    db.init_app(app=app)
 
-@app.route("/")
-@app.route("/products")
-def fetchProducts():
-    selected_products = select(Product).limit(50)
-    raw_products = db.session.scalars(selected_products).all()
-    products = [product.to_dict() for product in raw_products]
-    return jsonify(products)
+    @app.route("/")
+    def fetchProducts():
+        selected_products = select(Product).limit(50)
+        raw_products = db.session.scalars(selected_products).all()
+        products = [product.to_dict() for product in raw_products]
+        return jsonify(products)
+    return app
 
-
-@app.route("/users/createnewuser", methods=["POST"])
-def createNewUser():
-    dados = request.get_json()
-    if not dados or "user" not in dados or "password" not in dados:
-        return jsonify({"error": "O valor não preenche todos os dados"}), 401
-    if len(dados["user"]) > 100 or len(dados["password"]) > 100:
-        return jsonify({"error": "many characters", "manyCharacters": True}), 200
-
-    hasRepeated = User.query.filter(User.user == dados["user"]).first()
-    if not hasRepeated is None:
-        return jsonify({"error": "repeat usernames", "hasRepeated": True}), 200
-    userId = uuid.uuid4().hex
-    new_password = generate_password_hash(dados["password"])
-    acess_token, refresh_token = create_access_token(identify=userId)
-    new_user = User(
-        user=dados["user"],  # type:ignore
-        password=new_password,  # type:ignore
-        id=userId,  # type:ignore
-        cart=[],  # type:ignore
-    )
-
-    try:
-        db.session.add(new_user)
-        db.session.commit()
-        response = make_response(
-            jsonify(
-                {
-                    "user": dados["user"],
-                    "cart": [],
-                }
-            ),
-            201,
-        )
-        response.set_cookie(
-            key="acess_token",
-            value=acess_token,
-            max_age=3600,
-            secure=True,
-            httponly=True,
-            samesite="None",
-        )
-        response.set_cookie(
-            key="refresh_token",
-            value=refresh_token,
-            max_age=3600 * 24 * 7,
-            secure=True,
-            httponly=True,
-            samesite="None",
-        )
-
-        response.set_cookie(
-            key="is_logged",
-            value="true",
-            max_age=3600 * 24 * 7,
-            secure=True,
-            httponly=False,
-            samesite="None",
-        )
-
-        return response
-
-    except Exception as e:
-        db.session.rollback()
-
-        return jsonify({"error": str(e)}), 400
-
-
-@app.route("/users/me", methods=["GET"])
-@required_authentication
-def fetchUser(id):
-    try:
-        selectedUser = User.query.get_or_404(id)
-        if selectedUser is None:
-            return jsonify({"error": "Not user found"}), 404
-        return jsonify(
-            {
-                "user": selectedUser.user,
-                "cart": selectedUser.cart,
-            }
-        )
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
-
-
-@app.route("/users/login", methods=["POST"])
-def loginUser():
-    try:
-        username = request.get_json()["username"]
-        password = request.get_json()["password"]
-        selectedUser = User.query.filter(username == User.user).first()
-        if selectedUser is None or not check_password_hash(
-            selectedUser.password, password
-        ):
-            return jsonify({"auth": False, "message": "Usuário não encontrado"}), 200
-
-        acess_token, refresh_token = create_access_token(selectedUser.id)
-        response = make_response(
-            jsonify(
-                {
-                    "auth": True,
-                    "user": selectedUser.user,
-                    "cart": selectedUser.cart,
-                }
-            ),
-            201,
-        )
-        response.set_cookie(
-            key="acess_token",
-            value=acess_token,
-            max_age=3600,
-            secure=True,
-            httponly=True,
-            samesite="None",
-        )
-        response.set_cookie(
-            key="refresh_token",
-            value=refresh_token,
-            max_age=3600 * 24 * 7,
-            secure=True,
-            httponly=True,
-            samesite="None",
-        )
-        response.set_cookie(
-            key="is_logged",
-            value="true",
-            max_age=3600 * 24 * 7,
-            secure=True,
-            httponly=False,
-            samesite="None",
-        )
-        return response
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-@app.route("/users/cart", methods=["GET", "POST", "DELETE"])  # type: ignore
-@required_authentication
-def fetchCart(id):
-    selectedUser = User.query.get_or_404(id)
-    if request.method == "GET":
-        try:
-            cart = selectedUser.cart
-            return jsonify({"cart": cart}), 200
-        except Exception as e:
-            return jsonify({"error": str(e)}), 400
-    elif request.method == "POST":
-        try:
-            product = request.get_json()["product"]
-            if not product or "id" not in product:
-                return jsonify({"error": "has not the parameter 'id'"})
-
-            cart = list(selectedUser.cart) if selectedUser.cart is not None else []
-
-            cart = [x for x in cart if x["id"] != product["id"]]
-
-            cart.append(product)
-
-            selectedUser.cart = cart
-
-            db.session.commit()
-            return jsonify({"cart": selectedUser.cart}), 200
-        except Exception as e:
-            db.session.rollback()
-            return jsonify({"error": str(e)}), 500
-    elif request.method == "DELETE":
-        try:
-            product_id = request.get_json()["id"]
-            cart = list(selectedUser.cart) if selectedUser.cart is not None else []
-            cart = (
-                list(filter(lambda product: product["id"] != product_id, cart))
-                if selectedUser.cart is not None
-                else []
-            )
-            selectedUser.cart = cart
-            db.session.commit()
-            return jsonify({"cart": selectedUser.cart})
-        except Exception as e:
-            return {"error": str(e)}, 500
-
-
-@app.route("/users/clearCart", methods=["DELETE"])
-@required_authentication
-def clearCart(id):
-    try:
-        selectedUser = User.query.get_or_404(id)
-        selectedUser.cart = []
-        db.session.commit()
-        return jsonify({"cart": selectedUser.cart, "status": "clean"}), 200
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"error": str(e)}), 500
-
-
-@app.route("/refresh", methods=["POST"])
-@refresh_route
-def refresh(identify):
-    acess_token, refresh_token = create_access_token(identify=identify)
-
-    response = make_response(jsonify({"status": "refreshed"}))
-
-    response.set_cookie(
-        key="acess_token",
-        value=acess_token,
-        max_age=3600,
-        httponly=True,
-        samesite="None",
-        secure=True,
-    )
-    response.set_cookie(
-        key="refresh_token",
-        value=refresh_token,
-        max_age=3600 * 24 * 7,
-        httponly=True,
-        samesite="None",
-        secure=not is_dev,
-    )
-    response.set_cookie(
-        key="is_logged",
-        value="true",
-        max_age=3600 * 24 * 7,
-        secure=True,
-        httponly=False,
-        samesite="None",
-    )
-    return response
-
-
-@app.route("/users/logout", methods=["DELETE"])
-@required_authentication
-def logout(id):
-    tokens = get_cookies_refresh()
-    if not tokens or not "acess_token" in tokens or not "refresh_token" in tokens:
-        return jsonify(
-            {
-                "error": "É preciso de acess_token e refresh token",
-                "type_error": "Insuficient",
-            }
-        )
-    try:
-        acess_token_payload = decode_jwt(tokens["acess_token"])
-        expire_time_acess_token = calculate_seconds_of_now_future_date(
-            acess_token_payload["expiration_date"]
-        )
-        expire_time_refresh_token = calculate_seconds_of_now_future_date(
-            decode_jwt(tokens["refresh_token"], "expiration_date")  # type:ignore
-        )
-
-        put_in_redis(
-            tokens["acess_token"],
-            time=int(expire_time_acess_token),
-            id=acess_token_payload["identify"],
-            acess_token=True,
-        )
-        put_in_redis(
-            tokens["refresh_token"],
-            time=int(expire_time_refresh_token),
-            id=acess_token_payload["identify"],
-            acess_token=False,
-        )
-        return jsonify({"status": "ok"}), 200
-    except Exception as err:
-        return jsonify({"status": "error", "details": str(err)}), 500
-
+app = create_app()
 
 if __name__ == "__main__":
-    host = "localhost" if is_dev else "0.0.0.0"
-    port = int(os.environ.get("PORT", 5000))
     app.run(host=host, port=port, debug=is_dev)
