@@ -1,15 +1,16 @@
 from flask import Flask, jsonify
+from flask_cors import CORS
 
 from sqlalchemy import select
-from flask_cors import CORS
 
 from .db import db
 from .db.models.Product import Product
-from dotenv import load_dotenv
+
 from .env_variables import url, client_site, host, port, is_dev
 
-load_dotenv()
-
+from .routes.users import users_bp
+from .routes.auth import auth_bp
+from .routes.products import products_bp 
 
 def create_app():
     app = Flask(__name__)
@@ -34,6 +35,10 @@ def create_app():
     }
 
     db.init_app(app=app)
+
+    app.register_blueprint(users_bp)
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(products_bp)
 
     @app.route("/")
     def fetchProducts():
