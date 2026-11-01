@@ -1,5 +1,5 @@
-from flask import Blueprint,request,jsonify,make_response
-from werkzeug.security import generate_password_hash,check_password_hash
+from flask import Blueprint, request, jsonify, make_response
+from werkzeug.security import generate_password_hash, check_password_hash
 
 import uuid
 
@@ -8,7 +8,7 @@ from ..db import db
 
 from ..auth.authentication import create_access_token
 
-auth_bp = Blueprint("auth_bp",__name__,url_prefix="/users")
+auth_bp = Blueprint("auth_bp", __name__, url_prefix="/users")
 
 
 @auth_bp.route("/createnewuser", methods=["POST"])

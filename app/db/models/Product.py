@@ -1,6 +1,7 @@
 from .. import db
-from sqlalchemy.orm import Mapped,mapped_column
-from sqlalchemy import String,JSON,Float
+from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import String, JSON, Float
+
 
 class Product(db.Model):
     __tablename__ = "products"

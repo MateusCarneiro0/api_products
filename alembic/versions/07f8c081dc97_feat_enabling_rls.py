@@ -22,11 +22,11 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     """Enabling RLS and creating policies to this"""
 
-    op.execute('ALTER TABLE \"user\" ENABLE ROW LEVEL SECURITY')
+    op.execute('ALTER TABLE "user" ENABLE ROW LEVEL SECURITY')
 
-    op.execute('DROP POLICY IF EXISTS select_user_policy ON \"user\"')
-    op.execute('DROP POLICY IF EXISTS update_user_policy ON \"user\"')
-    op.execute('DROP POLICY IF EXISTS delete_user_policy on \"user\"')
+    op.execute('DROP POLICY IF EXISTS select_user_policy ON "user"')
+    op.execute('DROP POLICY IF EXISTS update_user_policy ON "user"')
+    op.execute('DROP POLICY IF EXISTS delete_user_policy on "user"')
 
     op.execute("""
         CREATE POLICY select_user_policy ON \"user\"
@@ -48,8 +48,8 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     """Disabling RLS and drop policies"""
-    op.execute('DROP POLICY IF EXISTS select_user_policy ON \"user\"')
-    op.execute('DROP POLICY IF EXISTS update_user_policy ON \"user\"')
-    op.execute('DROP POLICY IF EXISTS delete_user_policy on \"user\"')
+    op.execute('DROP POLICY IF EXISTS select_user_policy ON "user"')
+    op.execute('DROP POLICY IF EXISTS update_user_policy ON "user"')
+    op.execute('DROP POLICY IF EXISTS delete_user_policy on "user"')
 
-    op.execute('ALTER TABLE \"user\" DISABLE ROW LEVEL SECURITY')
+    op.execute('ALTER TABLE "user" DISABLE ROW LEVEL SECURITY')

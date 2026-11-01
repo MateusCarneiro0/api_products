@@ -1,9 +1,10 @@
-from flask import Blueprint,jsonify
+from flask import Blueprint, jsonify
 from sqlalchemy import select
 from ..db.models.Product import Product
 from ..db import db
 
-products_bp = Blueprint("products_bp",__name__,url_prefix="/products")
+products_bp = Blueprint("products_bp", __name__, url_prefix="/products")
+
 
 @products_bp.route("/<string:id>")
 def fetchProductsId(id):

@@ -1,11 +1,12 @@
-from flask import Blueprint,request,jsonify
+from flask import Blueprint, request, jsonify
 
 from ..db.models.User import User
 from ..db import db
 
 from ..auth.authentication import required_authentication
 
-users_bp = Blueprint("users_bp",__name__,url_prefix="/users")
+users_bp = Blueprint("users_bp", __name__, url_prefix="/users")
+
 
 @users_bp.route("/me", methods=["GET"])
 @required_authentication
