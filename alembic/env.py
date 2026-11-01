@@ -4,9 +4,7 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 import sys
 from alembic import context
-from dotenv import load_dotenv
-import os
-
+from app.env_variables import treated_url
 from app.app import db, User, Product
 
 # this is the Alembic Config object, which provides
@@ -21,7 +19,7 @@ load_dotenv()
 database_url = os.getenv("DATABASE_URL")
 
 if database_url:
-    config.set_main_option("sqlalchemy.url", database_url)
+    config.set_main_option("sqlalchemy.url", treated_url)
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
